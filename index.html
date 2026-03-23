@@ -421,11 +421,6 @@
                 :class="{ active: passForm.mode === 'custom' }"
                 @click="passForm.mode = 'custom'"
               >✎ Custom Mass</button>
-              <button
-                class="pass-type-tab"
-                :class="{ active: passForm.mode === 'state' }"
-                @click="passForm.mode = 'state'"
-              >📍 State</button>
             </div>
 
             <!-- Ship pass form -->
@@ -500,30 +495,11 @@
               </p>
             </div>
 
-            <!-- State change form -->
-            <div v-if="passForm.mode === 'state'">
-              <label class="form-label">
-                New State
-                <select v-model="passForm.stateStatus" class="form-input">
-                  <option value="stable">Stable</option>
-                  <option value="reduced">Reduced</option>
-                  <option value="critical">Critical</option>
-                  <option value="collapsed">Collapsed</option>
-                </select>
-              </label>
-              <p style="font-size:0.75rem;color:var(--color-text-muted);margin-top:6px">
-                Records the observed wormhole state without adding mass to the rolling tally.
-              </p>
-            </div>
-
             <button
               @click="addPass"
               :disabled="!canSubmitPass"
               class="btn btn-primary btn-full"
-            >
-              <template v-if="passForm.mode === 'state'">📍 Record State Change</template>
-              <template v-else>↻ Record Pass</template>
-            </button>
+            >↻ Record Pass</button>
           </section><!-- /.roll-card-addpass -->
 
           <!-- Plan Card - right column -->
@@ -536,6 +512,13 @@
                 </div>
               </div>
               <div style="display:flex;align-items:center;gap:8px">
+                <button
+                  v-if="nextWhState"
+                  @click="advanceWhState"
+                  class="btn btn-sm"
+                  style="border-color:var(--color-warning);color:var(--color-warning)"
+                  :title="`Mark wormhole as ${nextWhState}`"
+                >📍 → {{ nextWhState.charAt(0).toUpperCase() + nextWhState.slice(1) }}</button>
                 <div class="plan-view-tabs" role="group">
                   <button class="pass-type-tab" :class="{ active: activePlanView === 'worst' }" @click="activePlanView = 'worst'">Worst Case</button>
                   <button class="pass-type-tab" :class="{ active: activePlanView === 'best' }" @click="activePlanView = 'best'">Best Case</button>
@@ -628,6 +611,12 @@
                       <span class="plan-pass-remaining" :class="{ 'is-over': row.remaining < 0 }">
                         {{ row.remaining > 0 ? fmtMass(row.remaining) : '—' }}
                       </span>
+                      <button
+                        v-if="row.isNext"
+                        @click="recordPlanPass(row)"
+                        class="btn btn-xs btn-primary plan-pass-record-btn"
+                        title="Record this pass"
+                      >↻</button>
                     </div>
 
                   </template>

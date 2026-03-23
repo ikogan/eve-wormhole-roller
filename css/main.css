@@ -908,6 +908,7 @@ input[type="number"] { -moz-appearance: textfield; }
 .plan-pass-item.is-next {
   border-left: 2px solid var(--color-accent);
   background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card));
+  grid-template-columns: 24px 1fr auto auto auto;
   opacity: 1;
 }
 

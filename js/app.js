@@ -116,11 +116,10 @@ createApp({
     const rollingTarget = ref(localStorage.getItem(STORAGE_ROLLING_TARGET) || 'collapse'); // 'collapse' | 'critical'
 
     const passForm = reactive({
-      mode:        'ship',     // 'ship' | 'custom' | 'state'
-      shipId:      '',
-      passType:    'cold',     // 'hot' | 'cold'
-      customMass:  null,       // stored in kg
-      stateStatus: 'reduced',  // for state-change mode
+      mode:       'ship',  // 'ship' | 'custom'
+      shipId:     '',
+      passType:   'cold',  // 'hot' | 'cold'
+      customMass: null,    // stored in kg
     });
 
     const farSideForm = reactive({
@@ -259,7 +258,6 @@ createApp({
     });
     const shipPassFits  = computed(() => massFits(shipPassMass.value));
     const canSubmitPass = computed(() => {
-      if (passForm.mode === 'state') return true;
       if (passForm.mode === 'ship') return !!passForm.shipId && shipPassMass.value > 0;
       return Number(passForm.customMass) > 0;
     });
@@ -275,6 +273,7 @@ createApp({
 
     function passLabel(pass) {
       if (pass.mode === 'state') return `⚑ → ${capitalise(pass.newStatus)}`;
+      if (pass.mode === 'plan')  return pass.label;
       if (pass.mode === 'custom') return 'Custom Pass';
       const ship = ships.value.find(s => s.id === pass.shipId);
       return `${ship?.name ?? 'Unknown'} (${pass.passType === 'hot' ? '♨ Hot' : '❄ Cold'})`;
@@ -343,12 +342,6 @@ createApp({
     function addPass() {
       if (!canSubmitPass.value) return;
 
-      if (passForm.mode === 'state') {
-        wormhole.status = passForm.stateStatus;
-        passes.value.push({ id: genId(), mode: 'state', newStatus: passForm.stateStatus, mass: 0 });
-        return;
-      }
-
       // Warn if selected ship+passType cannot physically fit through this wormhole size
       if (passForm.mode === 'ship' && whSizeLimit.value && !shipPassFits.value) {
         const ok = confirm(
@@ -377,6 +370,24 @@ createApp({
 
     function clearPasses() {
       if (confirm('Clear all recorded passes for this session?')) passes.value = [];
+    }
+
+    // Record a pass directly from a plan row (plan rows have label + mass)
+    function recordPlanPass(row) {
+      passes.value.push({ id: genId(), mode: 'plan', label: row.label, mass: row.mass });
+    }
+
+    // State progression: stable → reduced → critical → collapsed
+    const nextWhState = computed(() => {
+      const seq = { stable: 'reduced', reduced: 'critical', critical: 'collapsed' };
+      return seq[wormhole.status] ?? null;
+    });
+
+    function advanceWhState() {
+      const next = nextWhState.value;
+      if (!next) return;
+      wormhole.status = next;
+      passes.value.push({ id: genId(), mode: 'state', newStatus: next, mass: 0 });
     }
 
     function resetSession() {
@@ -636,7 +647,7 @@ createApp({
       shipModalValid, unitStep,
       whTotalMassInput, draftColdInput, draftHotInput, customMassInput,
       applyTheme, fmtMass, massFits,
-      addPass, removePass, clearPasses, resetSession,
+      addPass, removePass, clearPasses, resetSession, recordPlanPass, advanceWhState, nextWhState,
       addFarSideShip, removeFarSideShip,
       passLabel, threshClass,
       openAddShip, openEditShip, closeShipModal, saveShip, deleteShip, cloneShip,
