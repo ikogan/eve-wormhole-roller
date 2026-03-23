@@ -1,0 +1,763 @@
+/* ============================================================
+   EVE Online Wormhole Roller — Faction Themes
+   All themes use CSS custom properties on [data-theme]
+   ============================================================ */
+
+/* ── Caldari State (default) ──────────────────────────────── */
+:root,
+[data-theme="caldari"] {
+  --color-bg-primary:    #0b1422;
+  --color-bg-secondary:  #0f1e32;
+  --color-bg-tertiary:   #162a42;
+  --color-bg-card:       #0f1e32;
+  --color-bg-input:      #091526;
+  --color-bg-modal:      #111e30;
+  --color-bg-hover:      #1a2e48;
+
+  --color-accent:        #29b6f6;
+  --color-accent-dim:    #0277bd;
+  --color-accent-glow:   rgba(41, 182, 246, 0.18);
+  --color-accent-hot:    #f48fb1;   /* hot pass indicator */
+  --color-accent-cold:   #80deea;   /* cold pass indicator */
+
+  --color-text-primary:  #ddeaf5;
+  --color-text-secondary:#7eaac8;
+  --color-text-muted:    #3d6080;
+
+  --color-border:        #1a3550;
+  --color-border-bright: #2a5580;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #29b6f6;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #29b6f6;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(41, 182, 246, 0.12);
+  --color-bar-track:       #0d1a2c;
+
+  --font-ui:    'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  --font-mono:  'Consolas', 'Monaco', 'Courier New', monospace;
+
+  --radius-sm:  2px;
+  --radius-md:  4px;
+  --radius-lg:  6px;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.8);
+  --shadow-glow:  0 0 12px var(--color-accent-glow);
+
+  --transition:  150ms ease;
+
+  /* Theme label for display */
+  --theme-name: "Caldari State";
+}
+
+/* ── Amarr Empire ─────────────────────────────────────────── */
+[data-theme="amarr"] {
+  --color-bg-primary:    #160e00;
+  --color-bg-secondary:  #1e1400;
+  --color-bg-tertiary:   #291c00;
+  --color-bg-card:       #1e1400;
+  --color-bg-input:      #110b00;
+  --color-bg-modal:      #201500;
+  --color-bg-hover:      #332000;
+
+  --color-accent:        #d4a017;
+  --color-accent-dim:    #8a6610;
+  --color-accent-glow:   rgba(212, 160, 23, 0.18);
+  --color-accent-hot:    #ff8a65;
+  --color-accent-cold:   #e0c060;
+
+  --color-text-primary:  #f0dea8;
+  --color-text-secondary:#a88840;
+  --color-text-muted:    #5a4410;
+
+  --color-border:        #382800;
+  --color-border-bright: #5c4400;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #d4a017;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #d4a017;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(212, 160, 23, 0.12);
+  --color-bar-track:       #120c00;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.85);
+  --shadow-glow:  0 0 12px var(--color-accent-glow);
+}
+
+/* ── Gallente Federation ──────────────────────────────────── */
+[data-theme="gallente"] {
+  --color-bg-primary:    #091509;
+  --color-bg-secondary:  #0e1e0e;
+  --color-bg-tertiary:   #142814;
+  --color-bg-card:       #0e1e0e;
+  --color-bg-input:      #071107;
+  --color-bg-modal:      #101f10;
+  --color-bg-hover:      #1c301c;
+
+  --color-accent:        #4dd481;
+  --color-accent-dim:    #2a8a50;
+  --color-accent-glow:   rgba(77, 212, 129, 0.18);
+  --color-accent-hot:    #aed581;
+  --color-accent-cold:   #80cbc4;
+
+  --color-text-primary:  #d0f0d8;
+  --color-text-secondary:#6aaa80;
+  --color-text-muted:    #2d5c38;
+
+  --color-border:        #1a381a;
+  --color-border-bright: #2a582a;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #4dd481;
+
+  --color-status-stable:   #4dd481;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #4dd481;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(77, 212, 129, 0.12);
+  --color-bar-track:       #091109;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.8);
+  --shadow-glow:  0 0 12px var(--color-accent-glow);
+}
+
+/* ── Minmatar Republic ────────────────────────────────────── */
+[data-theme="minmatar"] {
+  --color-bg-primary:    #180a00;
+  --color-bg-secondary:  #221100;
+  --color-bg-tertiary:   #2e1800;
+  --color-bg-card:       #221100;
+  --color-bg-input:      #120800;
+  --color-bg-modal:      #241200;
+  --color-bg-hover:      #3a1e00;
+
+  --color-accent:        #e85c1c;
+  --color-accent-dim:    #a03a10;
+  --color-accent-glow:   rgba(232, 92, 28, 0.18);
+  --color-accent-hot:    #ff7043;
+  --color-accent-cold:   #ffb74d;
+
+  --color-text-primary:  #f0d0a8;
+  --color-text-secondary:#a06030;
+  --color-text-muted:    #5c3010;
+
+  --color-border:        #381800;
+  --color-border-bright: #5c2a00;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #e85c1c;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #e85c1c;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(232, 92, 28, 0.12);
+  --color-bar-track:       #140900;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.55);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.82);
+  --shadow-glow:  0 0 12px var(--color-accent-glow);
+}
+
+/* ── Guristas Pirates ─────────────────────────────────────── */
+[data-theme="guristas"] {
+  --color-bg-primary:    #091109;
+  --color-bg-secondary:  #0d1a0d;
+  --color-bg-tertiary:   #132213;
+  --color-bg-card:       #0d1a0d;
+  --color-bg-input:      #080f08;
+  --color-bg-modal:      #0f1c0f;
+  --color-bg-hover:      #1a2e1a;
+
+  --color-accent:        #00e676;
+  --color-accent-dim:    #00994d;
+  --color-accent-glow:   rgba(0, 230, 118, 0.2);
+  --color-accent-hot:    #69f0ae;
+  --color-accent-cold:   #b2ff59;
+
+  --color-text-primary:  #c0eecb;
+  --color-text-secondary:#4aaa70;
+  --color-text-muted:    #1e5c30;
+
+  --color-border:        #163016;
+  --color-border-bright: #254825;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #00e676;
+
+  --color-status-stable:   #00e676;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #00e676;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(0, 230, 118, 0.12);
+  --color-bar-track:       #080f08;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.8);
+  --shadow-glow:  0 0 14px var(--color-accent-glow);
+}
+
+/* ── Sansha's Nation ──────────────────────────────────────── */
+[data-theme="sansha"] {
+  --color-bg-primary:    #0d0018;
+  --color-bg-secondary:  #140025;
+  --color-bg-tertiary:   #1c0033;
+  --color-bg-card:       #140025;
+  --color-bg-input:      #0a0012;
+  --color-bg-modal:      #160028;
+  --color-bg-hover:      #280048;
+
+  --color-accent:        #cc44ff;
+  --color-accent-dim:    #8800cc;
+  --color-accent-glow:   rgba(204, 68, 255, 0.22);
+  --color-accent-hot:    #f48fb1;
+  --color-accent-cold:   #ce93d8;
+
+  --color-text-primary:  #eed8f5;
+  --color-text-secondary:#9960c0;
+  --color-text-muted:    #4a1a70;
+
+  --color-border:        #2d0055;
+  --color-border-bright: #4a0088;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #cc44ff;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #cc44ff;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(204, 68, 255, 0.14);
+  --color-bar-track:       #0a0014;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.88);
+  --shadow-glow:  0 0 16px var(--color-accent-glow);
+}
+
+/* ── Blood Raiders ────────────────────────────────────────── */
+[data-theme="blood"] {
+  --color-bg-primary:    #180000;
+  --color-bg-secondary:  #220000;
+  --color-bg-tertiary:   #2e0000;
+  --color-bg-card:       #220000;
+  --color-bg-input:      #120000;
+  --color-bg-modal:      #250000;
+  --color-bg-hover:      #3a0000;
+
+  --color-accent:        #ff3333;
+  --color-accent-dim:    #aa0000;
+  --color-accent-glow:   rgba(255, 51, 51, 0.2);
+  --color-accent-hot:    #ff7043;
+  --color-accent-cold:   #ef9a9a;
+
+  --color-text-primary:  #f5c8c8;
+  --color-text-secondary:#aa4444;
+  --color-text-muted:    #602020;
+
+  --color-border:        #3c0000;
+  --color-border-bright: #600000;
+
+  --color-danger:        #ff3333;
+  --color-danger-dim:    #7f0000;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #ff3333;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ff6600;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #cc2200;
+  --color-bar-fill-mid:    #ff4400;
+  --color-bar-fill-danger: #ff0000;
+  --color-bar-variance:    rgba(255, 51, 51, 0.14);
+  --color-bar-track:       #140000;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.85);
+  --shadow-glow:  0 0 14px var(--color-accent-glow);
+}
+
+/* ── Serpentis ────────────────────────────────────────────── */
+[data-theme="serpentis"] {
+  --color-bg-primary:    #001016;
+  --color-bg-secondary:  #001820;
+  --color-bg-tertiary:   #00222d;
+  --color-bg-card:       #001820;
+  --color-bg-input:      #000d12;
+  --color-bg-modal:      #001b22;
+  --color-bg-hover:      #003040;
+
+  --color-accent:        #00d4e8;
+  --color-accent-dim:    #008899;
+  --color-accent-glow:   rgba(0, 212, 232, 0.18);
+  --color-accent-hot:    #80deea;
+  --color-accent-cold:   #4dd0e1;
+
+  --color-text-primary:  #c0f0f8;
+  --color-text-secondary:#408898;
+  --color-text-muted:    #1a4850;
+
+  --color-border:        #003848;
+  --color-border-bright: #005870;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #00d4e8;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #00bcd4;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(0, 212, 232, 0.12);
+  --color-bar-track:       #000e14;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.82);
+  --shadow-glow:  0 0 14px var(--color-accent-glow);
+}
+
+/* ── Angel Cartel ─────────────────────────────────────────── */
+[data-theme="angel"] {
+  --color-bg-primary:    #180800;
+  --color-bg-secondary:  #221200;
+  --color-bg-tertiary:   #2e1a00;
+  --color-bg-card:       #221200;
+  --color-bg-input:      #130700;
+  --color-bg-modal:      #251400;
+  --color-bg-hover:      #3a2000;
+
+  --color-accent:        #ff6600;
+  --color-accent-dim:    #cc4000;
+  --color-accent-glow:   rgba(255, 102, 0, 0.2);
+  --color-accent-hot:    #ff8c42;
+  --color-accent-cold:   #ffcc66;
+
+  --color-text-primary:  #f5d4a8;
+  --color-text-secondary:#aa7030;
+  --color-text-muted:    #5c3a08;
+
+  --color-border:        #3c1e00;
+  --color-border-bright: #603200;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #ff6600;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #ff6600;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(255, 102, 0, 0.14);
+  --color-bar-track:       #140900;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.55);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.82);
+  --shadow-glow:  0 0 14px var(--color-accent-glow);
+}
+
+/* ── ORE (Outer Ring Excavations) ─────────────────────────── */
+[data-theme="ore"] {
+  --color-bg-primary:    #0d0d0d;
+  --color-bg-secondary:  #161616;
+  --color-bg-tertiary:   #202020;
+  --color-bg-card:       #161616;
+  --color-bg-input:      #0a0a0a;
+  --color-bg-modal:      #181818;
+  --color-bg-hover:      #2a2a2a;
+
+  --color-accent:        #f5a623;
+  --color-accent-dim:    #b07010;
+  --color-accent-glow:   rgba(245, 166, 35, 0.2);
+  --color-accent-hot:    #ffcc80;
+  --color-accent-cold:   #ffe082;
+
+  --color-text-primary:  #f0e0c0;
+  --color-text-secondary:#b08040;
+  --color-text-muted:    #5a4018;
+
+  --color-border:        #2e2010;
+  --color-border-bright: #503818;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #f5a623;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #f5a623;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(245, 166, 35, 0.14);
+  --color-bar-track:       #0d0d0d;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.65);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.88);
+  --shadow-glow:  0 0 12px var(--color-accent-glow);
+}
+
+/* ── Mordu's Legion ───────────────────────────────────────── */
+[data-theme="mordus"] {
+  --color-bg-primary:    #050c14;
+  --color-bg-secondary:  #081220;
+  --color-bg-tertiary:   #0d1c30;
+  --color-bg-card:       #081220;
+  --color-bg-input:      #040a10;
+  --color-bg-modal:      #091420;
+  --color-bg-hover:      #122030;
+
+  --color-accent:        #00e5ff;
+  --color-accent-dim:    #0099bb;
+  --color-accent-glow:   rgba(0, 229, 255, 0.2);
+  --color-accent-hot:    #84ffff;
+  --color-accent-cold:   #e0f7fa;
+
+  --color-text-primary:  #c8eeff;
+  --color-text-secondary:#4ab0cc;
+  --color-text-muted:    #1a5070;
+
+  --color-border:        #0c2840;
+  --color-border-bright: #183e5c;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #00e5ff;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #00bcd4;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(0, 229, 255, 0.12);
+  --color-bar-track:       #050c14;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.85);
+  --shadow-glow:  0 0 16px var(--color-accent-glow);
+}
+
+/* ── Triglavian Collective ────────────────────────────────── */
+[data-theme="triglavian"] {
+  --color-bg-primary:    #140004;
+  --color-bg-secondary:  #1e0008;
+  --color-bg-tertiary:   #2c000e;
+  --color-bg-card:       #1e0008;
+  --color-bg-input:      #0e0003;
+  --color-bg-modal:      #210009;
+  --color-bg-hover:      #3a0015;
+
+  --color-accent:        #ff1744;
+  --color-accent-dim:    #b00030;
+  --color-accent-glow:   rgba(255, 23, 68, 0.22);
+  --color-accent-hot:    #ff6e40;
+  --color-accent-cold:   #ff80ab;
+
+  --color-text-primary:  #ffd0d8;
+  --color-text-secondary:#cc3355;
+  --color-text-muted:    #6e1428;
+
+  --color-border:        #3c0014;
+  --color-border-bright: #620028;
+
+  --color-danger:        #ff1744;
+  --color-danger-dim:    #7f0020;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #ff1744;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ff6e40;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #d50000;
+  --color-bar-fill-mid:    #ff6e40;
+  --color-bar-fill-danger: #ff1744;
+  --color-bar-variance:    rgba(255, 23, 68, 0.16);
+  --color-bar-track:       #110003;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.65);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.9);
+  --shadow-glow:  0 0 18px var(--color-accent-glow);
+}
+
+/* ── EDENCOM ──────────────────────────────────────────────── */
+[data-theme="edencom"] {
+  --color-bg-primary:    #070d16;
+  --color-bg-secondary:  #0c1525;
+  --color-bg-tertiary:   #121e34;
+  --color-bg-card:       #0c1525;
+  --color-bg-input:      #050a10;
+  --color-bg-modal:      #0e1828;
+  --color-bg-hover:      #1a2a40;
+
+  --color-accent:        #448aff;
+  --color-accent-dim:    #2255cc;
+  --color-accent-glow:   rgba(68, 138, 255, 0.2);
+  --color-accent-hot:    #82b1ff;
+  --color-accent-cold:   #b0bec5;
+
+  --color-text-primary:  #dce8ff;
+  --color-text-secondary:#6688cc;
+  --color-text-muted:    #2a4070;
+
+  --color-border:        #162040;
+  --color-border-bright: #243660;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #448aff;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #1e88e5;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(68, 138, 255, 0.14);
+  --color-bar-track:       #060c14;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.86);
+  --shadow-glow:  0 0 14px var(--color-accent-glow);
+}
+
+/* ── CONCORD ──────────────────────────────────────────────── */
+[data-theme="concord"] {
+  --color-bg-primary:    #080810;
+  --color-bg-secondary:  #10101e;
+  --color-bg-tertiary:   #18182c;
+  --color-bg-card:       #10101e;
+  --color-bg-input:      #060610;
+  --color-bg-modal:      #121222;
+  --color-bg-hover:      #222238;
+
+  --color-accent:        #ffd600;
+  --color-accent-dim:    #c09c00;
+  --color-accent-glow:   rgba(255, 214, 0, 0.2);
+  --color-accent-hot:    #ffeb3b;
+  --color-accent-cold:   #fff9c4;
+
+  --color-text-primary:  #f5f0d8;
+  --color-text-secondary:#c0a820;
+  --color-text-muted:    #6a5a10;
+
+  --color-border:        #28281a;
+  --color-border-bright: #404015;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #ffd600;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #f9a825;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(255, 214, 0, 0.14);
+  --color-bar-track:       #080810;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.65);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.88);
+  --shadow-glow:  0 0 14px var(--color-accent-glow);
+}
+
+/* ── Society of Conscious Thought ────────────────────────── */
+[data-theme="soct"] {
+  --color-bg-primary:    #0c0014;
+  --color-bg-secondary:  #120020;
+  --color-bg-tertiary:   #1a002e;
+  --color-bg-card:       #120020;
+  --color-bg-input:      #09000f;
+  --color-bg-modal:      #140022;
+  --color-bg-hover:      #240040;
+
+  --color-accent:        #aa44ff;
+  --color-accent-dim:    #7700cc;
+  --color-accent-glow:   rgba(170, 68, 255, 0.22);
+  --color-accent-hot:    #e040fb;
+  --color-accent-cold:   #ce93d8;
+
+  --color-text-primary:  #ecddf8;
+  --color-text-secondary:#9955cc;
+  --color-text-muted:    #4d1a80;
+
+  --color-border:        #26004a;
+  --color-border-bright: #400080;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #aa44ff;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #8e24aa;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(170, 68, 255, 0.16);
+  --color-bar-track:       #0a0012;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.65);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.9);
+  --shadow-glow:  0 0 18px var(--color-accent-glow);
+}
+
+/* ── Deathless Circle ─────────────────────────────────────── */
+[data-theme="deathless"] {
+  --color-bg-primary:    #030a06;
+  --color-bg-secondary:  #07110a;
+  --color-bg-tertiary:   #0d1c10;
+  --color-bg-card:       #07110a;
+  --color-bg-input:      #020706;
+  --color-bg-modal:      #091410;
+  --color-bg-hover:      #122018;
+
+  --color-accent:        #00e676;
+  --color-accent-dim:    #007a3d;
+  --color-accent-glow:   rgba(0, 230, 118, 0.22);
+  --color-accent-hot:    #76ff03;
+  --color-accent-cold:   #69f0ae;
+
+  --color-text-primary:  #b8f0cc;
+  --color-text-secondary:#30a060;
+  --color-text-muted:    #0e4024;
+
+  --color-border:        #0e2816;
+  --color-border-bright: #1a4228;
+
+  --color-danger:        #ff1744;
+  --color-danger-dim:    #7f0020;
+  --color-warning:       #ffa726;
+  --color-success:       #00e676;
+
+  --color-status-stable:   #00e676;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ff1744;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #00c853;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ff1744;
+  --color-bar-variance:    rgba(0, 230, 118, 0.16);
+  --color-bar-track:       #030a06;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.7);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.92);
+  --shadow-glow:  0 0 18px var(--color-accent-glow);
+}
+
+  --color-bg-primary:    #0c0c18;
+  --color-bg-secondary:  #131325;
+  --color-bg-tertiary:   #1c1c32;
+  --color-bg-card:       #131325;
+  --color-bg-input:      #0a0a14;
+  --color-bg-modal:      #151528;
+  --color-bg-hover:      #252542;
+
+  --color-accent:        #99ccff;
+  --color-accent-dim:    #5588bb;
+  --color-accent-glow:   rgba(153, 204, 255, 0.16);
+  --color-accent-hot:    #f48fb1;
+  --color-accent-cold:   #b3e5fc;
+
+  --color-text-primary:  #eeeeff;
+  --color-text-secondary:#8888cc;
+  --color-text-muted:    #3c3c6a;
+
+  --color-border:        #252545;
+  --color-border-bright: #3a3a68;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #99ccff;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #7bafd4;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(153, 204, 255, 0.12);
+  --color-bar-track:       #0a0a16;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.55);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.85);
+  --shadow-glow:  0 0 12px var(--color-accent-glow);
+}
