@@ -116,10 +116,11 @@ createApp({
     const rollingTarget = ref(localStorage.getItem(STORAGE_ROLLING_TARGET) || 'collapse'); // 'collapse' | 'critical'
 
     const passForm = reactive({
-      mode:       'ship',  // 'ship' | 'custom'
-      shipId:     '',
-      passType:   'cold',  // 'hot' | 'cold'
-      customMass: null,    // stored in kg
+      mode:        'ship',     // 'ship' | 'custom' | 'state'
+      shipId:      '',
+      passType:    'cold',     // 'hot' | 'cold'
+      customMass:  null,       // stored in kg
+      stateStatus: 'reduced',  // for state-change mode
     });
 
     const farSideForm = reactive({
@@ -243,6 +244,7 @@ createApp({
     });
     const shipPassFits  = computed(() => massFits(shipPassMass.value));
     const canSubmitPass = computed(() => {
+      if (passForm.mode === 'state') return true;
       if (passForm.mode === 'ship') return !!passForm.shipId && shipPassMass.value > 0;
       return Number(passForm.customMass) > 0;
     });
@@ -254,14 +256,16 @@ createApp({
     });
     const passesReversed = computed(() => [...passesWithRunning.value].reverse());
 
+    function capitalise(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
     function passLabel(pass) {
+      if (pass.mode === 'state') return `⚑ → ${capitalise(pass.newStatus)}`;
       if (pass.mode === 'custom') return 'Custom Pass';
       const ship = ships.value.find(s => s.id === pass.shipId);
       return `${ship?.name ?? 'Unknown'} (${pass.passType === 'hot' ? '♨ Hot' : '❄ Cold'})`;
     }
 
     // ── Calculator ───────────────────────────────────────────────────────────
-    // Only include ship+passType combos that fit through the wormhole size
     const passOptions = computed(() => {
       const opts = [];
       for (const ship of ships.value) {
@@ -291,22 +295,18 @@ createApp({
     const worstCasePlan = ref(null);
     const bestCasePlan  = ref(null);
     const calcBusy      = ref(false);
-    const calcDirty     = ref(true); // true = needs recalc on next tab visit
+    const calcDirty     = ref(false);
 
     // Receive results back from the worker
     _calcWorker.onmessage = (e) => {
       worstCasePlan.value = e.data.worstCasePlan;
       bestCasePlan.value  = e.data.bestCasePlan;
       calcBusy.value = false;
+      if (calcDirty.value) triggerCalc();
     };
 
-    // Mark dirty whenever the inputs that affect the calc change
-    watch([passOptions, massToColMin, massToColMax], () => { calcDirty.value = true; });
-    watch(farSideShips, () => { calcDirty.value = true; }, { deep: true });
-
-    // Only calculate when the user navigates to the Calculator tab
     function triggerCalc() {
-      if (!calcDirty.value) return;
+      if (calcBusy.value) { calcDirty.value = true; return; }
       calcBusy.value      = true;
       worstCasePlan.value = null;
       bestCasePlan.value  = null;
@@ -318,11 +318,21 @@ createApp({
       });
     }
 
-    watch(activeTab, tab => { if (tab === 'calc') triggerCalc(); });
+    watch([passOptions, massToColMin, massToColMax], () => triggerCalc());
+    watch(farSideShips, () => triggerCalc(), { deep: true });
+    watch(activeTab, tab => { if (tab === 'roll') triggerCalc(); });
+
+    triggerCalc(); // run immediately on load
 
     // ── Actions ──────────────────────────────────────────────────────────────
     function addPass() {
       if (!canSubmitPass.value) return;
+
+      if (passForm.mode === 'state') {
+        wormhole.status = passForm.stateStatus;
+        passes.value.push({ id: genId(), mode: 'state', newStatus: passForm.stateStatus, mass: 0 });
+        return;
+      }
 
       // Warn if selected ship+passType cannot physically fit through this wormhole size
       if (passForm.mode === 'ship' && whSizeLimit.value && !shipPassFits.value) {
@@ -518,7 +528,70 @@ createApp({
       wormhole.totalMass * (rollingTarget.value === 'critical' ? 1.0 : 1.1)
     ));
 
-    // ── Pass row hover tooltip ────────────────────────────────────────────────
+    // ── Unified Plan (done passes + planned passes merged) ────────────────────
+    const activePlanView = ref('worst');
+
+    function buildFullDisplayPlan(plan, planTarget) {
+      const result = [];
+
+      for (const p of passesWithRunning.value) {
+        if (p.mode === 'state') {
+          result.push({ rowType: 'state-marker', id: p.id, label: passLabel(p), newStatus: p.newStatus });
+        } else {
+          const pct = wormhole.totalMass > 0 ? (p.running / wormhole.totalMass) * 100 : 0;
+          result.push({
+            rowType: 'done',
+            id: p.id,
+            label: passLabel(p),
+            mass: p.mass,
+            running: p.running,
+            num: p.num,
+            totalThrough: p.running,
+            pct,
+            stateAfter: _whStateAfter(pct),
+          });
+        }
+      }
+
+      const plannedRows = buildDisplayPlan(plan, planTarget);
+
+      const hasCompleted = result.some(r => r.rowType === 'done');
+      const hasPlanned   = plannedRows.some(r => r.rowType !== 'threshold');
+      if (hasCompleted && hasPlanned) result.push({ rowType: 'divider' });
+
+      let foundNext = false;
+      for (const row of plannedRows) {
+        if (!foundNext && row.rowType !== 'threshold') {
+          result.push({ ...row, isNext: true });
+          foundNext = true;
+        } else {
+          result.push(row);
+        }
+      }
+
+      return result;
+    }
+
+    const displayFullBestCase = computed(() => buildFullDisplayPlan(
+      bestCasePlan.value,
+      wormhole.totalMass * (rollingTarget.value === 'critical' ? 0.9 : 1.0)
+    ));
+    const displayFullWorstCase = computed(() => buildFullDisplayPlan(
+      worstCasePlan.value,
+      wormhole.totalMass * (rollingTarget.value === 'critical' ? 1.0 : 1.1)
+    ));
+    const activePlanDisplay = computed(() =>
+      activePlanView.value === 'best' ? displayFullBestCase.value : displayFullWorstCase.value
+    );
+    const activePlan = computed(() =>
+      activePlanView.value === 'best' ? bestCasePlan.value : worstCasePlan.value
+    );
+    const nextPassRow = computed(() => {
+      const display = activePlanDisplay.value;
+      return display.find(r => r.isNext) ?? null;
+    });
+
+
     const passTooltip = reactive({ show: false, x: 0, y: 0, row: null });
 
     function showPassTooltip(event, row) {
@@ -540,10 +613,11 @@ createApp({
       canSubmitFarSide, farSideCustomMassInput, farSideAloneCollapses, farSideOverCollapses,
       effectiveMassToColMin, effectiveMassToColMax,
       rollingTarget, displayBestCase, displayWorstCase,
+      activePlanView, activePlanDisplay, activePlan, nextPassRow,
       passTooltip, showPassTooltip, hidePassTooltip,
       barFillStyle, barVarianceStyle, markerReducedLeft, markerCriticalLeft, markerTotalLeft,
       statusClass, selectedShip, shipPassMass, shipPassFits, canSubmitPass,
-      passesReversed, passOptions, worstCasePlan, bestCasePlan, calcBusy,
+      passesReversed, passesWithRunning, passOptions, worstCasePlan, bestCasePlan, calcBusy,
       shipModalValid, unitStep,
       whTotalMassInput, draftColdInput, draftHotInput, customMassInput,
       applyTheme, fmtMass, massFits,

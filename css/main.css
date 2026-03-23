@@ -841,7 +841,7 @@ input[type="number"] { -moz-appearance: textfield; }
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-height: 380px;
+  max-height: calc(100vh - 300px);
   overflow-y: auto;
 }
 
@@ -891,6 +891,69 @@ input[type="number"] { -moz-appearance: textfield; }
 
 .plan-pass-item.is-final:hover {
   background: color-mix(in srgb, var(--color-danger) 16%, var(--color-bg-hover));
+}
+
+.plan-pass-item.is-done {
+  opacity: 0.55;
+  border-left-color: var(--color-border-bright);
+  grid-template-columns: 24px 1fr auto auto auto;
+  pointer-events: auto;
+}
+
+.plan-pass-item.is-done:hover {
+  background: var(--color-bg-card);
+  opacity: 0.7;
+}
+
+.plan-pass-item.is-next {
+  border-left: 2px solid var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card));
+  opacity: 1;
+}
+
+.plan-pass-item.is-next:hover {
+  background: color-mix(in srgb, var(--color-accent) 16%, var(--color-bg-hover));
+}
+
+.plan-next-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: 3px;
+  vertical-align: middle;
+  opacity: 0.85;
+}
+
+.plan-divider {
+  border-top: 1px solid var(--color-border-bright);
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+
+.plan-threshold-sep.is-state {
+  color: var(--color-accent);
+}
+
+.plan-next-label {
+  font-size: 0.7rem;
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  margin-top: 2px;
+}
+
+.plan-view-tabs {
+  display: flex;
+  gap: 0;
 }
 
 .plan-collapse-icon {
@@ -1093,15 +1156,15 @@ input[type="number"] { -moz-appearance: textfield; }
 
   .roll-tab-content {
     display: grid;
-    grid-template-columns: 1fr 360px;
-    grid-template-rows: auto 1fr;
+    grid-template-columns: 380px 1fr;
+    grid-template-rows: auto auto 1fr;
     gap: 16px;
     align-items: start;
   }
 
   .roll-card-mass    { grid-column: 1; grid-row: 1; }
   .roll-card-addpass { grid-column: 1; grid-row: 2; }
-  .roll-card-history { grid-column: 2; grid-row: 1 / span 2; }
+  .roll-card-plan    { grid-column: 2; grid-row: 1 / span 3; }
 }
 
 /* ── Responsive: Mobile ───────────────────────────────────── */
