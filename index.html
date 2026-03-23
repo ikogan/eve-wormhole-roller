@@ -1,0 +1,2717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="EVE Online Wormhole Roller — track mass, calculate optimal passes, and roll wormholes efficiently.">
+  <title>Wormhole Roller — EVE Online</title>
+  <style>
+/* ============================================================
+   EVE Online Wormhole Roller — Faction Themes
+   All themes use CSS custom properties on [data-theme]
+   ============================================================ */
+
+/* ── Caldari State (default) ──────────────────────────────── */
+:root,
+[data-theme="caldari"] {
+  --color-bg-primary:    #0b1422;
+  --color-bg-secondary:  #0f1e32;
+  --color-bg-tertiary:   #162a42;
+  --color-bg-card:       #0f1e32;
+  --color-bg-input:      #091526;
+  --color-bg-modal:      #111e30;
+  --color-bg-hover:      #1a2e48;
+
+  --color-accent:        #29b6f6;
+  --color-accent-dim:    #0277bd;
+  --color-accent-glow:   rgba(41, 182, 246, 0.18);
+  --color-accent-hot:    #f48fb1;   /* hot pass indicator */
+  --color-accent-cold:   #80deea;   /* cold pass indicator */
+
+  --color-text-primary:  #ddeaf5;
+  --color-text-secondary:#7eaac8;
+  --color-text-muted:    #3d6080;
+
+  --color-border:        #1a3550;
+  --color-border-bright: #2a5580;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #29b6f6;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #29b6f6;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(41, 182, 246, 0.12);
+  --color-bar-track:       #0d1a2c;
+
+  --font-ui:    'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  --font-mono:  'Consolas', 'Monaco', 'Courier New', monospace;
+
+  --radius-sm:  2px;
+  --radius-md:  4px;
+  --radius-lg:  6px;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.8);
+  --shadow-glow:  0 0 12px var(--color-accent-glow);
+
+  --transition:  150ms ease;
+
+  /* Theme label for display */
+  --theme-name: "Caldari State";
+}
+
+/* ── Amarr Empire ─────────────────────────────────────────── */
+[data-theme="amarr"] {
+  --color-bg-primary:    #160e00;
+  --color-bg-secondary:  #1e1400;
+  --color-bg-tertiary:   #291c00;
+  --color-bg-card:       #1e1400;
+  --color-bg-input:      #110b00;
+  --color-bg-modal:      #201500;
+  --color-bg-hover:      #332000;
+
+  --color-accent:        #d4a017;
+  --color-accent-dim:    #8a6610;
+  --color-accent-glow:   rgba(212, 160, 23, 0.18);
+  --color-accent-hot:    #ff8a65;
+  --color-accent-cold:   #e0c060;
+
+  --color-text-primary:  #f0dea8;
+  --color-text-secondary:#a88840;
+  --color-text-muted:    #5a4410;
+
+  --color-border:        #382800;
+  --color-border-bright: #5c4400;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #d4a017;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #d4a017;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(212, 160, 23, 0.12);
+  --color-bar-track:       #120c00;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.85);
+  --shadow-glow:  0 0 12px var(--color-accent-glow);
+}
+
+/* ── Gallente Federation ──────────────────────────────────── */
+[data-theme="gallente"] {
+  --color-bg-primary:    #091509;
+  --color-bg-secondary:  #0e1e0e;
+  --color-bg-tertiary:   #142814;
+  --color-bg-card:       #0e1e0e;
+  --color-bg-input:      #071107;
+  --color-bg-modal:      #101f10;
+  --color-bg-hover:      #1c301c;
+
+  --color-accent:        #4dd481;
+  --color-accent-dim:    #2a8a50;
+  --color-accent-glow:   rgba(77, 212, 129, 0.18);
+  --color-accent-hot:    #aed581;
+  --color-accent-cold:   #80cbc4;
+
+  --color-text-primary:  #d0f0d8;
+  --color-text-secondary:#6aaa80;
+  --color-text-muted:    #2d5c38;
+
+  --color-border:        #1a381a;
+  --color-border-bright: #2a582a;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #4dd481;
+
+  --color-status-stable:   #4dd481;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #4dd481;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(77, 212, 129, 0.12);
+  --color-bar-track:       #091109;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.8);
+  --shadow-glow:  0 0 12px var(--color-accent-glow);
+}
+
+/* ── Minmatar Republic ────────────────────────────────────── */
+[data-theme="minmatar"] {
+  --color-bg-primary:    #180a00;
+  --color-bg-secondary:  #221100;
+  --color-bg-tertiary:   #2e1800;
+  --color-bg-card:       #221100;
+  --color-bg-input:      #120800;
+  --color-bg-modal:      #241200;
+  --color-bg-hover:      #3a1e00;
+
+  --color-accent:        #e85c1c;
+  --color-accent-dim:    #a03a10;
+  --color-accent-glow:   rgba(232, 92, 28, 0.18);
+  --color-accent-hot:    #ff7043;
+  --color-accent-cold:   #ffb74d;
+
+  --color-text-primary:  #f0d0a8;
+  --color-text-secondary:#a06030;
+  --color-text-muted:    #5c3010;
+
+  --color-border:        #381800;
+  --color-border-bright: #5c2a00;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #e85c1c;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #e85c1c;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(232, 92, 28, 0.12);
+  --color-bar-track:       #140900;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.55);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.82);
+  --shadow-glow:  0 0 12px var(--color-accent-glow);
+}
+
+/* ── Guristas Pirates ─────────────────────────────────────── */
+[data-theme="guristas"] {
+  --color-bg-primary:    #091109;
+  --color-bg-secondary:  #0d1a0d;
+  --color-bg-tertiary:   #132213;
+  --color-bg-card:       #0d1a0d;
+  --color-bg-input:      #080f08;
+  --color-bg-modal:      #0f1c0f;
+  --color-bg-hover:      #1a2e1a;
+
+  --color-accent:        #00e676;
+  --color-accent-dim:    #00994d;
+  --color-accent-glow:   rgba(0, 230, 118, 0.2);
+  --color-accent-hot:    #69f0ae;
+  --color-accent-cold:   #b2ff59;
+
+  --color-text-primary:  #c0eecb;
+  --color-text-secondary:#4aaa70;
+  --color-text-muted:    #1e5c30;
+
+  --color-border:        #163016;
+  --color-border-bright: #254825;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #00e676;
+
+  --color-status-stable:   #00e676;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #00e676;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(0, 230, 118, 0.12);
+  --color-bar-track:       #080f08;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.8);
+  --shadow-glow:  0 0 14px var(--color-accent-glow);
+}
+
+/* ── Sansha's Nation ──────────────────────────────────────── */
+[data-theme="sansha"] {
+  --color-bg-primary:    #0d0018;
+  --color-bg-secondary:  #140025;
+  --color-bg-tertiary:   #1c0033;
+  --color-bg-card:       #140025;
+  --color-bg-input:      #0a0012;
+  --color-bg-modal:      #160028;
+  --color-bg-hover:      #280048;
+
+  --color-accent:        #cc44ff;
+  --color-accent-dim:    #8800cc;
+  --color-accent-glow:   rgba(204, 68, 255, 0.22);
+  --color-accent-hot:    #f48fb1;
+  --color-accent-cold:   #ce93d8;
+
+  --color-text-primary:  #eed8f5;
+  --color-text-secondary:#9960c0;
+  --color-text-muted:    #4a1a70;
+
+  --color-border:        #2d0055;
+  --color-border-bright: #4a0088;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #cc44ff;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #cc44ff;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(204, 68, 255, 0.14);
+  --color-bar-track:       #0a0014;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.88);
+  --shadow-glow:  0 0 16px var(--color-accent-glow);
+}
+
+/* ── Blood Raiders ────────────────────────────────────────── */
+[data-theme="blood"] {
+  --color-bg-primary:    #180000;
+  --color-bg-secondary:  #220000;
+  --color-bg-tertiary:   #2e0000;
+  --color-bg-card:       #220000;
+  --color-bg-input:      #120000;
+  --color-bg-modal:      #250000;
+  --color-bg-hover:      #3a0000;
+
+  --color-accent:        #ff3333;
+  --color-accent-dim:    #aa0000;
+  --color-accent-glow:   rgba(255, 51, 51, 0.2);
+  --color-accent-hot:    #ff7043;
+  --color-accent-cold:   #ef9a9a;
+
+  --color-text-primary:  #f5c8c8;
+  --color-text-secondary:#aa4444;
+  --color-text-muted:    #602020;
+
+  --color-border:        #3c0000;
+  --color-border-bright: #600000;
+
+  --color-danger:        #ff3333;
+  --color-danger-dim:    #7f0000;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #ff3333;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ff6600;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #cc2200;
+  --color-bar-fill-mid:    #ff4400;
+  --color-bar-fill-danger: #ff0000;
+  --color-bar-variance:    rgba(255, 51, 51, 0.14);
+  --color-bar-track:       #140000;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.85);
+  --shadow-glow:  0 0 14px var(--color-accent-glow);
+}
+
+/* ── Serpentis ────────────────────────────────────────────── */
+[data-theme="serpentis"] {
+  --color-bg-primary:    #001016;
+  --color-bg-secondary:  #001820;
+  --color-bg-tertiary:   #00222d;
+  --color-bg-card:       #001820;
+  --color-bg-input:      #000d12;
+  --color-bg-modal:      #001b22;
+  --color-bg-hover:      #003040;
+
+  --color-accent:        #00d4e8;
+  --color-accent-dim:    #008899;
+  --color-accent-glow:   rgba(0, 212, 232, 0.18);
+  --color-accent-hot:    #80deea;
+  --color-accent-cold:   #4dd0e1;
+
+  --color-text-primary:  #c0f0f8;
+  --color-text-secondary:#408898;
+  --color-text-muted:    #1a4850;
+
+  --color-border:        #003848;
+  --color-border-bright: #005870;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #00d4e8;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #00bcd4;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(0, 212, 232, 0.12);
+  --color-bar-track:       #000e14;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.82);
+  --shadow-glow:  0 0 14px var(--color-accent-glow);
+}
+
+/* ── Angel Cartel ─────────────────────────────────────────── */
+[data-theme="angel"] {
+  --color-bg-primary:    #180800;
+  --color-bg-secondary:  #221200;
+  --color-bg-tertiary:   #2e1a00;
+  --color-bg-card:       #221200;
+  --color-bg-input:      #130700;
+  --color-bg-modal:      #251400;
+  --color-bg-hover:      #3a2000;
+
+  --color-accent:        #ff6600;
+  --color-accent-dim:    #cc4000;
+  --color-accent-glow:   rgba(255, 102, 0, 0.2);
+  --color-accent-hot:    #ff8c42;
+  --color-accent-cold:   #ffcc66;
+
+  --color-text-primary:  #f5d4a8;
+  --color-text-secondary:#aa7030;
+  --color-text-muted:    #5c3a08;
+
+  --color-border:        #3c1e00;
+  --color-border-bright: #603200;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #ff6600;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #ff6600;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(255, 102, 0, 0.14);
+  --color-bar-track:       #140900;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.55);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.82);
+  --shadow-glow:  0 0 14px var(--color-accent-glow);
+}
+
+/* ── Sisters of EVE ───────────────────────────────────────── */
+[data-theme="soe"] {
+  --color-bg-primary:    #0c0c18;
+  --color-bg-secondary:  #131325;
+  --color-bg-tertiary:   #1c1c32;
+  --color-bg-card:       #131325;
+  --color-bg-input:      #0a0a14;
+  --color-bg-modal:      #151528;
+  --color-bg-hover:      #252542;
+
+  --color-accent:        #99ccff;
+  --color-accent-dim:    #5588bb;
+  --color-accent-glow:   rgba(153, 204, 255, 0.16);
+  --color-accent-hot:    #f48fb1;
+  --color-accent-cold:   #b3e5fc;
+
+  --color-text-primary:  #eeeeff;
+  --color-text-secondary:#8888cc;
+  --color-text-muted:    #3c3c6a;
+
+  --color-border:        #252545;
+  --color-border-bright: #3a3a68;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #99ccff;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #7bafd4;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(153, 204, 255, 0.12);
+  --color-bar-track:       #0a0a16;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.55);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.85);
+  --shadow-glow:  0 0 12px var(--color-accent-glow);
+}
+
+/* ============================================================
+   EVE Online Wormhole Roller — Main Stylesheet
+   ============================================================ */
+
+/* ── Reset & Base ─────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-ui);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+/* ── Layout Shell ─────────────────────────────────────────── */
+#app {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  min-height: 100dvh;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border-bright);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-wrap: wrap;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.brand-icon {
+  font-size: 1.4rem;
+  color: var(--color-accent);
+  text-shadow: var(--shadow-glow);
+  line-height: 1;
+}
+
+.brand-title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  text-shadow: var(--shadow-glow);
+  white-space: nowrap;
+}
+
+.header-wh-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.wh-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wh-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.status-stable   { color: var(--color-status-stable);   }
+.status-reduced  { color: var(--color-status-reduced);  }
+.status-critical { color: var(--color-status-critical); }
+.status-collapsed{ color: var(--color-status-collapsed);}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ── Theme Selector ───────────────────────────────────────── */
+.theme-selector {
+  appearance: none;
+  background: var(--color-bg-input);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-bright);
+  border-radius: var(--radius-md);
+  padding: 6px 28px 6px 10px;
+  font-size: 0.8rem;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  min-width: 140px;
+  transition: border-color var(--transition);
+}
+
+.theme-selector:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.theme-selector option,
+.theme-selector optgroup {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+/* ── Tab Navigation ───────────────────────────────────────── */
+.tab-nav {
+  display: flex;
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 8px;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tab-nav::-webkit-scrollbar { display: none; }
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--transition), border-color var(--transition);
+  margin-bottom: -1px;
+  min-height: 44px;
+}
+
+.tab-btn:hover {
+  color: var(--color-text-primary);
+}
+
+.tab-btn.active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+/* ── Main Content ─────────────────────────────────────────── */
+.app-main {
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── Cards ────────────────────────────────────────────────── */
+.card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-card);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.card-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: 12px;
+}
+
+.card-header .card-title {
+  margin-bottom: 0;
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Buttons ──────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+  min-height: 36px;
+  text-decoration: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--color-accent-dim);
+  border-color: var(--color-accent);
+  color: var(--color-text-primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-accent);
+  color: #000;
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-secondary {
+  background: transparent;
+  border-color: var(--color-border-bright);
+  color: var(--color-text-secondary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.btn-danger {
+  background: transparent;
+  border-color: var(--color-danger-dim);
+  color: var(--color-danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-danger-dim);
+  border-color: var(--color-danger);
+}
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  min-height: 30px;
+}
+
+.btn-xs {
+  padding: 2px 7px;
+  font-size: 0.72rem;
+  min-height: 26px;
+}
+
+.btn-full {
+  width: 100%;
+  margin-top: 8px;
+}
+
+/* ── Form Elements ────────────────────────────────────────── */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.form-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.form-input {
+  appearance: none;
+  background: var(--color-bg-input);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  width: 100%;
+  min-height: 40px;
+  transition: border-color var(--transition);
+  background-image: none;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-glow);
+}
+
+select.form-input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+  cursor: pointer;
+}
+
+input[type="number"].form-input {
+  font-family: var(--font-mono);
+}
+
+/* remove number input spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+input[type="number"] { -moz-appearance: textfield; }
+
+/* ── Ship Table ───────────────────────────────────────────── */
+.ship-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.ship-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.ship-table th {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-tertiary);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.ship-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.ship-table tr:last-child td { border-bottom: none; }
+
+.ship-table tr:hover td {
+  background: var(--color-bg-hover);
+}
+
+.ship-name {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.mass-value {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.ship-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+/* ── Empty State ──────────────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+  font-style: italic;
+}
+
+/* ── Mass Bar ─────────────────────────────────────────────── */
+.mass-bar-wrap {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.mass-bar-labels-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+  letter-spacing: 0.04em;
+}
+
+.mass-bar-track {
+  position: relative;
+  height: 28px;
+  background: var(--color-bar-track);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.mass-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  transition: width 300ms ease, background-color 300ms ease;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.mass-bar-variance-zone {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: var(--color-bar-variance);
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(255,255,255,0.04) 4px,
+    rgba(255,255,255,0.04) 8px
+  );
+}
+
+/* Threshold markers */
+.mass-bar-marker {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 2px;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.marker-reduced  { background: var(--color-warning); }
+.marker-critical { background: var(--color-danger);  }
+.marker-total    { background: var(--color-text-muted); }
+
+.mass-bar-legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.03em;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Mass Stats Grid ──────────────────────────────────────── */
+.mass-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.mass-stat {
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+
+.mass-stat-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.mass-stat-value {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.2;
+}
+
+.mass-stat-value.text-danger  { color: var(--color-danger);  }
+.mass-stat-value.text-warning { color: var(--color-warning); }
+.mass-stat-value.text-success { color: var(--color-success); }
+.mass-stat-value.text-muted   { color: var(--color-text-muted); font-size: 0.8rem; }
+
+.mass-stat-pct {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+/* ── Pass Form ────────────────────────────────────────────── */
+.pass-type-tabs {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.pass-type-tab {
+  flex: 1;
+  padding: 9px 12px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--transition);
+  min-height: 44px;
+  text-align: center;
+}
+
+.pass-type-tab + .pass-type-tab {
+  border-left: 1px solid var(--color-border);
+}
+
+.pass-type-tab.active {
+  background: var(--color-accent-dim);
+  color: var(--color-accent);
+}
+
+.pass-ship-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.pass-ship-row .form-label {
+  flex: 1;
+  min-width: 150px;
+}
+
+.hot-cold-group {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.hc-btn {
+  flex: 1;
+  padding: 0 14px;
+  background: transparent;
+  border: none;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  min-width: 70px;
+  min-height: 44px;
+}
+
+.hc-btn + .hc-btn {
+  border-left: 1px solid var(--color-border);
+}
+
+.hc-btn.active-cold {
+  background: rgba(128, 222, 234, 0.15);
+  color: var(--color-accent-cold);
+}
+
+.hc-btn.active-hot {
+  background: rgba(244, 143, 177, 0.15);
+  color: var(--color-accent-hot);
+}
+
+.pass-mass-preview {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.pass-mass-preview strong {
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+}
+
+/* ── Pass History ─────────────────────────────────────────── */
+.pass-history {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.pass-history::-webkit-scrollbar {
+  width: 4px;
+}
+.pass-history::-webkit-scrollbar-track {
+  background: var(--color-bg-tertiary);
+}
+.pass-history::-webkit-scrollbar-thumb {
+  background: var(--color-border-bright);
+  border-radius: 2px;
+}
+
+.pass-entry {
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  transition: background var(--transition);
+}
+
+.pass-entry:hover {
+  background: var(--color-bg-hover);
+}
+
+.pass-entry.is-custom {
+  border-left: 3px solid var(--color-text-muted);
+}
+
+.pass-num {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.pass-desc {
+  font-weight: 500;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pass-mass {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
+.pass-running {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* ── Calculator ───────────────────────────────────────────── */
+.calc-state-summary {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 12px;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  font-size: 0.82rem;
+}
+
+.calc-state-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.calc-state-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.calc-state-value {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* ── Calculator Spinner ───────────────────────────────────── */
+.calc-spinner-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 48px 0;
+  color: var(--color-text-muted);
+}
+
+.calc-spinner {
+  display: block;
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--color-border-bright);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.calc-spinner-label {
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+}
+
+.plans-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.plan-card {
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.plan-card-header {
+  padding: 10px 14px;
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.plan-card-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: 2px;
+}
+
+.plan-card-subtitle {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+
+.plan-passes-list {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.plan-pass-item {
+  display: grid;
+  grid-template-columns: 24px 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  border-left: 2px solid var(--color-border-bright);
+}
+
+.plan-pass-item:nth-child(even) {
+  opacity: 0.85;
+}
+
+.plan-pass-n {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.plan-pass-label {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.plan-pass-mass {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
+.plan-pass-running {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.plan-footer {
+  padding: 10px 14px;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--color-bg-secondary);
+}
+
+.plan-footer-stat strong {
+  font-family: var(--font-mono);
+  color: var(--color-accent);
+}
+
+.plan-alert {
+  padding: 16px;
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--color-text-muted);
+}
+
+.plan-alert.is-collapsed {
+  color: var(--color-danger);
+}
+
+/* ── Setup Tab Layout ─────────────────────────────────────── */
+.setup-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+/* Default (mobile): column layout for setup/roll content wrappers */
+.setup-tab-content,
+.roll-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Modal ────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+  backdrop-filter: blur(2px);
+}
+
+.modal {
+  background: var(--color-bg-modal);
+  border: 1px solid var(--color-border-bright);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+  width: 100%;
+  max-width: 440px;
+  padding: 20px;
+}
+
+.modal-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+/* ── Misc Utilities ───────────────────────────────────────── */
+.text-accent  { color: var(--color-accent);  }
+.text-danger  { color: var(--color-danger);  }
+.text-warning { color: var(--color-warning); }
+.text-success { color: var(--color-success); }
+.text-muted   { color: var(--color-text-muted); }
+.font-mono    { font-family: var(--font-mono); }
+
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 4px 0;
+}
+
+/* Pass type color indicators in history */
+.pass-desc .hot-label  { color: var(--color-accent-hot);  }
+.pass-desc .cold-label { color: var(--color-accent-cold); }
+
+/* ── Responsive: Tablet and Desktop ───────────────────────── */
+@media (min-width: 768px) {
+  .app-main {
+    padding: 20px;
+  }
+
+  .mass-stats-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .plans-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-main {
+    padding: 24px;
+  }
+
+  .setup-tab-content {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .roll-tab-content {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    grid-template-rows: auto 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .roll-card-mass    { grid-column: 1; grid-row: 1; }
+  .roll-card-addpass { grid-column: 1; grid-row: 2; }
+  .roll-card-history { grid-column: 2; grid-row: 1 / span 2; }
+}
+
+/* ── Responsive: Mobile ───────────────────────────────────── */
+@media (max-width: 640px) {
+  .app-header {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .brand-title {
+    font-size: 0.88rem;
+  }
+
+  .theme-selector {
+    min-width: 110px;
+    font-size: 0.75rem;
+  }
+
+  .tab-btn {
+    padding: 10px 12px;
+    font-size: 0.75rem;
+  }
+
+  .app-main {
+    padding: 10px;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  .plans-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mass-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pass-entry {
+    grid-template-columns: 24px 1fr auto auto;
+  }
+
+  .pass-running {
+    display: none;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ship-actions {
+    flex-direction: column;
+  }
+}
+
+/* ── Responsive: Foldable / narrow ───────────────────────── */
+@media (max-width: 360px) {
+  .mass-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .hc-btn {
+    padding: 0 8px;
+    min-width: 55px;
+  }
+}
+
+/* ── Tablet landscape: two-column roll tab ────────────────── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .plans-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ── Scrollbar Styling ────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-bright) var(--color-bg-primary);
+}
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: var(--color-bg-primary); }
+*::-webkit-scrollbar-thumb {
+  background: var(--color-border-bright);
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-dim);
+}
+
+/* ── Unit Toggle ──────────────────────────────────────────── */
+.unit-toggle {
+  display: flex;
+  border: 1px solid var(--color-border-bright);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.unit-btn {
+  padding: 5px 10px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition);
+  min-height: 32px;
+  min-width: 36px;
+}
+
+.unit-btn + .unit-btn {
+  border-left: 1px solid var(--color-border-bright);
+}
+
+.unit-btn.active {
+  background: var(--color-accent-dim);
+  color: var(--color-accent);
+}
+
+.unit-btn:hover:not(.active) {
+  color: var(--color-text-primary);
+  background: var(--color-bg-hover);
+}
+
+/* ── Ship Compatibility Indicators ────────────────────────── */
+.ship-compat {
+  text-align: center;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.compat-ok      { color: var(--color-success); }
+.compat-no      { color: var(--color-danger);  }
+.compat-unknown { color: var(--color-text-muted); }
+
+/* ── Compat Warning Banner (pass form) ────────────────────── */
+.compat-warning-banner {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(239, 83, 80, 0.1);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  color: var(--color-danger);
+  line-height: 1.4;
+}
+
+/* ── Excluded Ships Notice (calculator) ───────────────────── */
+.excluded-ships-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 167, 38, 0.1);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  color: var(--color-warning);
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+.excluded-icon { font-size: 1rem; flex-shrink: 0; }
+
+/* ── Accessibility ────────────────────────────────────────── */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Focus-visible for keyboard nav ──────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ── Transitions for theme switches ──────────────────────── */
+body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
+  transition:
+    background-color var(--transition),
+    border-color var(--transition),
+    color var(--transition);
+}
+
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══════════════════════════════════════════════════════════
+       HEADER
+  ═══════════════════════════════════════════════════════════ -->
+  <header class="app-header">
+    <div class="header-brand">
+      <span class="brand-icon" aria-hidden="true">⬡</span>
+      <span class="brand-title">Wormhole Roller</span>
+    </div>
+
+    <div class="header-wh-info">
+      <span v-if="wormhole.name" class="wh-name">{{ wormhole.name }}</span>
+      <span v-if="wormhole.totalMass > 0" class="wh-status-badge" :class="statusClass">
+        ● {{ wormhole.status.toUpperCase() }}
+      </span>
+    </div>
+
+    <div class="header-controls">
+      <select
+        v-model="selectedTheme"
+        @change="applyTheme"
+        class="theme-selector"
+        aria-label="Choose faction theme"
+      >
+        <optgroup label="Empires">
+          <option value="caldari">Caldari State</option>
+          <option value="amarr">Amarr Empire</option>
+          <option value="gallente">Gallente Federation</option>
+          <option value="minmatar">Minmatar Republic</option>
+        </optgroup>
+        <optgroup label="Pirate Factions">
+          <option value="guristas">Guristas Pirates</option>
+          <option value="sansha">Sansha's Nation</option>
+          <option value="blood">Blood Raiders</option>
+          <option value="serpentis">Serpentis</option>
+          <option value="angel">Angel Cartel</option>
+          <option value="soe">Sisters of EVE</option>
+        </optgroup>
+      </select>
+      <div class="unit-toggle" role="group" aria-label="Mass display unit">
+        <button class="unit-btn" :class="{active: massUnit === 'kg'}" @click="massUnit = 'kg'">kg</button>
+        <button class="unit-btn" :class="{active: massUnit === 't'}"  @click="massUnit = 't'">t</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════════════
+       TAB NAVIGATION
+  ═══════════════════════════════════════════════════════════ -->
+  <nav class="tab-nav" role="tablist" aria-label="App sections">
+    <button
+      role="tab"
+      class="tab-btn"
+      :class="{ active: activeTab === 'setup' }"
+      :aria-selected="activeTab === 'setup'"
+      @click="activeTab = 'setup'"
+    >⚙ Setup</button>
+    <button
+      role="tab"
+      class="tab-btn"
+      :class="{ active: activeTab === 'roll' }"
+      :aria-selected="activeTab === 'roll'"
+      @click="activeTab = 'roll'"
+    >↻ Roll</button>
+    <button
+      role="tab"
+      class="tab-btn"
+      :class="{ active: activeTab === 'calc' }"
+      :aria-selected="activeTab === 'calc'"
+      @click="activeTab = 'calc'"
+    >◈ Calculator</button>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MAIN CONTENT
+  ═══════════════════════════════════════════════════════════ -->
+  <main class="app-main">
+
+    <!-- ──────────────────────────────────────────────────────
+         SETUP TAB
+    ─────────────────────────────────────────────────────── -->
+    <div v-if="activeTab === 'setup'" class="tab-content">
+
+      <!-- Desktop: two-column layout for setup -->
+      <div class="setup-tab-content">
+
+        <!-- Wormhole Configuration -->
+        <section class="card" aria-labelledby="wh-config-title">
+          <h2 class="card-title" id="wh-config-title">Wormhole Configuration</h2>
+          <div class="modal-form">
+            <label class="form-label">
+              Name / Designation
+              <input
+                v-model="wormhole.name"
+                class="form-input"
+                placeholder="e.g. C247 or K162"
+                maxlength="40"
+                autocomplete="off"
+              >
+            </label>
+            <label class="form-label">
+              Total Mass ({{ massUnit }})
+              <input
+                v-model.number="whTotalMassInput"
+                type="number"
+                min="0"
+                :step="unitStep"
+                class="form-input"
+                :placeholder="massUnit === 'kg' ? 'e.g. 3000000000' : 'e.g. 3000000'"
+              >
+            </label>
+            <label class="form-label">
+              Current Game Status
+              <select v-model="wormhole.status" class="form-input">
+                <option value="stable">Stable (&gt;50% remaining)</option>
+                <option value="reduced">Reduced (&lt;50% remaining)</option>
+                <option value="critical">Critical (&lt;10% remaining)</option>
+                <option value="collapsed">Collapsed</option>
+              </select>
+            </label>
+            <label class="form-label">
+              Wormhole Size
+              <select v-model="wormhole.size" class="form-input">
+                <option value="">Unknown / Not set</option>
+                <option v-for="sz in WH_SIZES" :key="sz.id" :value="sz.id">
+                  {{ sz.label }} — {{ sz.desc }} (≤ {{ fmtMass(sz.maxShipMass) }})
+                </option>
+              </select>
+            </label>
+            <button @click="resetSession" class="btn btn-danger btn-sm" style="align-self:flex-start;margin-top:4px">
+              ↺ Reset Session
+            </button>
+          </div>
+        </section>
+
+        <!-- Ship Fleet -->
+        <section class="card" aria-labelledby="fleet-title">
+          <div class="card-header">
+            <h2 class="card-title" id="fleet-title">Ship Fleet</h2>
+            <div class="card-actions">
+              <button @click="triggerImport" class="btn btn-secondary btn-sm" title="Import ships from YAML file">
+                ⬆ Import
+              </button>
+              <button @click="exportYAML" class="btn btn-secondary btn-sm" :disabled="ships.length === 0" title="Export ships to YAML file">
+                ⬇ Export
+              </button>
+              <button @click="openAddShip" class="btn btn-primary btn-sm">
+                + Add Ship
+              </button>
+            </div>
+          </div>
+
+          <!-- Hidden file input for YAML import -->
+          <input
+            type="file"
+            ref="yamlFileRef"
+            accept=".yaml,.yml"
+            @change="handleYAMLFile"
+            style="display:none"
+            aria-hidden="true"
+          >
+
+          <div v-if="ships.length === 0" class="empty-state">
+            No ships configured.<br>Add ships or import a YAML fleet file to get started.
+          </div>
+
+          <div v-else class="ship-table-wrapper">
+            <table class="ship-table" aria-label="Configured ships">
+              <thead>
+                <tr>
+                  <th scope="col">Ship</th>
+                  <th scope="col">Cold Mass ({{ massUnit }})</th>
+                  <th scope="col">Hot Mass ({{ massUnit }})</th>
+                  <th scope="col" title="Fits through configured wormhole size">Fits WH</th>
+                  <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="ship in ships" :key="ship.id">
+                  <td class="ship-name">{{ ship.name }}</td>
+                  <td class="mass-value">{{ fmtMass(ship.coldMass) }}</td>
+                  <td class="mass-value">{{ fmtMass(ship.hotMass) }}</td>
+                  <td class="ship-compat">
+                    <span v-if="!whSizeLimit" class="compat-unknown" title="No wormhole size set">—</span>
+                    <span v-else-if="massFits(ship.coldMass) || massFits(ship.hotMass)" class="compat-ok" title="At least one pass type fits">✓</span>
+                    <span v-else class="compat-no" title="Too heavy for this wormhole">✗</span>
+                  </td>
+                  <td class="ship-actions">
+                    <button @click="openEditShip(ship)" class="btn btn-secondary btn-xs">Edit</button>
+                    <button @click="deleteShip(ship.id)"  class="btn btn-danger btn-xs">✕</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div><!-- /.setup-tab-content -->
+    </div>
+
+    <!-- ──────────────────────────────────────────────────────
+         ROLL TAB
+    ─────────────────────────────────────────────────────── -->
+    <div v-if="activeTab === 'roll'" class="tab-content">
+
+      <!-- Desktop: two-column for roll tab -->
+      <div class="roll-tab-content">
+
+          <!-- Mass Status Card -->
+          <section class="card roll-card-mass" aria-labelledby="mass-status-title">
+            <h2 class="card-title" id="mass-status-title">Mass Status</h2>
+
+            <div v-if="wormhole.totalMass <= 0" class="empty-state" style="padding:12px 0">
+              Set the wormhole total mass in Setup to see the mass bar.
+            </div>
+
+            <div v-else class="mass-bar-wrap">
+              <!-- Bar track -->
+              <div class="mass-bar-track" role="meter"
+                :aria-valuenow="usedPct.toFixed(1)"
+                aria-valuemin="0" aria-valuemax="110"
+                :aria-label="`${usedPct.toFixed(1)}% of wormhole mass used`"
+              >
+                <!-- Variance zone background (100%→110%) -->
+                <div class="mass-bar-variance-zone" :style="barVarianceStyle"></div>
+                <!-- Filled region -->
+                <div class="mass-bar-fill" :style="barFillStyle"></div>
+                <!-- Threshold markers -->
+                <div class="mass-bar-marker marker-reduced"  :style="{ left: markerReducedLeft  }" title="50% — Wormhole becomes Reduced"></div>
+                <div class="mass-bar-marker marker-critical" :style="{ left: markerCriticalLeft }" title="90% — Wormhole becomes Critical"></div>
+                <div class="mass-bar-marker marker-total"    :style="{ left: markerTotalLeft    }" title="100% — Nominal collapse threshold"></div>
+              </div>
+
+              <!-- Legend -->
+              <div class="mass-bar-legend">
+                <span class="legend-item">
+                  <span class="legend-dot" style="background:var(--color-warning)"></span> Reduced (50%)
+                </span>
+                <span class="legend-item">
+                  <span class="legend-dot" style="background:var(--color-danger)"></span> Critical (90%)
+                </span>
+                <span class="legend-item">
+                  <span class="legend-dot" style="background:var(--color-text-muted)"></span> Total mass
+                </span>
+                <span class="legend-item">
+                  <span class="legend-dot" style="background:var(--color-accent);opacity:0.4"></span> +10% variance
+                </span>
+              </div>
+            </div>
+
+            <!-- Stats grid -->
+            <div class="mass-stats-grid">
+              <div class="mass-stat">
+                <div class="mass-stat-label">Used</div>
+                <div class="mass-stat-value font-mono">{{ fmtMass(usedMass) }}</div>
+                <div class="mass-stat-pct">{{ usedPct.toFixed(1) }}%</div>
+              </div>
+              <div class="mass-stat">
+                <div class="mass-stat-label">→ Reduced</div>
+                <div class="mass-stat-value font-mono" :class="massToReduced > 0 ? 'text-warning' : 'text-success'">
+                  {{ massToReduced > 0 ? fmtMass(massToReduced) : '✓ Done' }}
+                </div>
+              </div>
+              <div class="mass-stat">
+                <div class="mass-stat-label">→ Critical</div>
+                <div class="mass-stat-value font-mono" :class="massToCritical > 0 ? 'text-warning' : 'text-success'">
+                  {{ massToCritical > 0 ? fmtMass(massToCritical) : '✓ Done' }}
+                </div>
+              </div>
+              <div class="mass-stat">
+                <div class="mass-stat-label">→ Collapse (min)</div>
+                <div class="mass-stat-value font-mono" :class="massToColMin > 0 ? 'text-danger' : 'text-success'">
+                  {{ massToColMin > 0 ? fmtMass(massToColMin) : '✓ Collapsed' }}
+                </div>
+              </div>
+              <div class="mass-stat">
+                <div class="mass-stat-label">→ Collapse (max)</div>
+                <div class="mass-stat-value font-mono" :class="massToColMax > 0 ? 'text-warning' : 'text-success'">
+                  {{ massToColMax > 0 ? fmtMass(massToColMax) : '✓ Collapsed' }}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Add Pass Card -->
+          <section class="card roll-card-addpass" aria-labelledby="add-pass-title">
+            <h2 class="card-title" id="add-pass-title">Add Pass</h2>
+
+            <!-- Pass type toggle -->
+            <div class="pass-type-tabs" role="group" aria-label="Pass type">
+              <button
+                class="pass-type-tab"
+                :class="{ active: passForm.mode === 'ship' }"
+                @click="passForm.mode = 'ship'"
+              >🚀 Ship Pass</button>
+              <button
+                class="pass-type-tab"
+                :class="{ active: passForm.mode === 'custom' }"
+                @click="passForm.mode = 'custom'"
+              >✎ Custom Mass</button>
+            </div>
+
+            <!-- Ship pass form -->
+            <div v-if="passForm.mode === 'ship'">
+              <div class="pass-ship-row">
+                <label class="form-label" style="flex:1;min-width:140px">
+                  Ship
+                  <select v-model="passForm.shipId" class="form-input">
+                    <option value="">Select ship...</option>
+                    <option v-for="ship in ships" :key="ship.id" :value="ship.id">{{ ship.name }}</option>
+                  </select>
+                </label>
+
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <span class="form-label" style="margin-bottom:0">Drive</span>
+                  <div class="hot-cold-group" role="group" aria-label="Drive mode">
+                    <button
+                      class="hc-btn"
+                      :class="{ 'active-cold': passForm.passType === 'cold' }"
+                      @click="passForm.passType = 'cold'"
+                      :aria-pressed="passForm.passType === 'cold'"
+                    >❄ Cold</button>
+                    <button
+                      class="hc-btn"
+                      :class="{ 'active-hot': passForm.passType === 'hot' }"
+                      @click="passForm.passType = 'hot'"
+                      :aria-pressed="passForm.passType === 'hot'"
+                    >🔥 Hot</button>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="ships.length === 0" class="empty-state" style="padding:8px 0;font-size:0.8rem">
+                Add ships in the Setup tab first.
+              </div>
+
+              <div
+                v-if="passForm.shipId && whSizeLimit && !shipPassFits"
+                class="compat-warning-banner"
+                role="alert"
+              >
+                ⚠ <strong>{{ selectedShip?.name }}</strong>
+                ({{ passForm.passType }}) mass {{ fmtMass(shipPassMass) }} exceeds
+                {{ whSizeInfo.label }} limit of {{ fmtMass(whSizeLimit) }}.
+                This ship cannot pass through this wormhole type.
+              </div>
+
+              <div v-else-if="selectedShip && shipPassMass > 0" class="pass-mass-preview">
+                Pass mass: <strong>{{ fmtMass(shipPassMass) }}</strong>
+                <span class="text-muted" style="font-size:0.75rem;margin-left:8px">
+                  ({{ passForm.passType === 'hot' ? '🔥 MWD active' : '❄ MWD off' }})
+                </span>
+              </div>
+            </div>
+
+            <!-- Custom mass form -->
+            <div v-if="passForm.mode === 'custom'">
+              <label class="form-label">
+                Mass ({{ massUnit }})
+                <input
+                  v-model.number="customMassInput"
+                  type="number"
+                  min="1"
+                  :step="unitStep"
+                  class="form-input"
+                  :placeholder="massUnit === 'kg' ? 'Enter exact mass in kg' : 'Enter exact mass in t'"
+                  @keyup.enter="addPass"
+                >
+              </label>
+              <p style="font-size:0.75rem;color:var(--color-text-muted);margin-top:6px">
+                Use this for passes where you know the exact mass (e.g. a specific ship without a profile).
+              </p>
+            </div>
+
+            <button
+              @click="addPass"
+              :disabled="!canSubmitPass"
+              class="btn btn-primary btn-full"
+            >
+              ↻ Record Pass
+            </button>
+          </section><!-- /.roll-card-addpass -->
+
+        <!-- Pass History Card -->
+        <section class="card roll-card-history" aria-labelledby="history-title">
+            <div class="card-header">
+              <h2 class="card-title" id="history-title">
+                Pass History
+                <span v-if="passes.length" style="font-weight:400;color:var(--color-text-muted)">({{ passes.length }})</span>
+              </h2>
+              <button
+                v-if="passes.length > 0"
+                @click="clearPasses"
+                class="btn btn-danger btn-sm"
+              >Clear</button>
+            </div>
+
+            <div v-if="passes.length === 0" class="empty-state">
+              No passes recorded yet.<br>Record your first pass to start tracking.
+            </div>
+
+            <div v-else class="pass-history" role="list">
+              <div
+                v-for="pass in passesReversed"
+                :key="pass.id"
+                class="pass-entry"
+                :class="{ 'is-custom': pass.mode === 'custom' }"
+                role="listitem"
+              >
+                <span class="pass-num">#{{ pass.num }}</span>
+                <span class="pass-desc">{{ passLabel(pass) }}</span>
+                <span class="pass-mass text-accent">{{ fmtMass(pass.mass) }}</span>
+                <span class="pass-running text-muted">{{ fmtMass(pass.running) }} total</span>
+                <button
+                  @click="removePass(pass.id)"
+                  class="btn btn-xs btn-danger"
+                  :aria-label="`Remove pass ${passLabel(pass)}`"
+                >✕</button>
+              </div>
+            </div>
+          </section><!-- /.roll-card-history -->
+
+      </div><!-- /.roll-tab-content -->
+    </div>
+
+    <!-- ──────────────────────────────────────────────────────
+         CALCULATOR TAB
+    ─────────────────────────────────────────────────────── -->
+    <div v-if="activeTab === 'calc'" class="tab-content">
+      <section class="card" aria-labelledby="calc-title">
+        <h2 class="card-title" id="calc-title">Optimal Roll Calculator</h2>
+
+        <div v-if="ships.length === 0" class="empty-state">
+          Configure ships in the Setup tab to use the calculator.
+        </div>
+        <div v-else-if="wormhole.totalMass <= 0" class="empty-state">
+          Set the wormhole total mass in the Setup tab.
+        </div>
+        <div v-else>
+
+          <!-- Current state summary -->
+          <div class="calc-state-summary">
+            <div class="calc-state-item">
+              <span class="calc-state-label">Total Mass</span>
+              <span class="calc-state-value">{{ fmtMass(wormhole.totalMass) }}</span>
+            </div>
+            <div class="calc-state-item">
+              <span class="calc-state-label">Used (this session)</span>
+              <span class="calc-state-value">{{ fmtMass(usedMass) }}</span>
+            </div>
+            <div class="calc-state-item">
+              <span class="calc-state-label">Status</span>
+              <span class="calc-state-value" :class="statusClass">{{ wormhole.status.toUpperCase() }}</span>
+            </div>
+            <div class="calc-state-item">
+              <span class="calc-state-label">Available pass options</span>
+              <span class="calc-state-value">{{ passOptions.length }}</span>
+            </div>
+          </div>
+
+          <p style="font-size:0.75rem;color:var(--color-text-muted);margin-bottom:14px">
+            Plans are calculated from the current session's recorded passes.
+            If the wormhole was partially used before this session, add custom passes to account for prior mass.
+            All plans ensure an <strong style="color:var(--color-text-secondary)">even number of passes</strong>
+            so all ships return to the origin side.
+          </p>
+          <div v-if="excludedShips.length" class="excluded-ships-notice" role="status">
+            <span class="excluded-icon">⚠</span>
+            <span>
+              <strong>{{ excludedShips.length }} ship{{ excludedShips.length > 1 ? 's' : '' }}</strong>
+              excluded from plans (too heavy for {{ whSizeInfo?.label ?? 'selected' }} wormhole):
+              <em>{{ excludedShips.map(s => s.name).join(', ') }}</em>
+            </span>
+          </div>
+
+          <!-- Spinner while worker is computing -->
+          <div v-if="calcBusy" class="calc-spinner-wrap" role="status" aria-live="polite">
+            <span class="calc-spinner" aria-hidden="true"></span>
+            <span class="calc-spinner-label">Calculating optimal plan…</span>
+          </div>
+
+          <div v-else-if="worstCasePlan" class="plans-grid">
+
+            <!-- Best Case Plan (0% variance — fewest passes) -->
+            <div class="plan-card">
+              <div class="plan-card-header">
+                <div class="plan-card-title">Best Case</div>
+                <div class="plan-card-subtitle">0% variance — wormhole is exactly as described, must exceed {{ fmtMass(wormhole.totalMass) }}</div>
+              </div>
+              <div v-if="bestCasePlan.alreadyCollapsed" class="plan-alert is-collapsed">
+                ✓ Wormhole has already collapsed (based on recorded passes).
+              </div>
+              <div v-else-if="bestCasePlan.impossible" class="plan-alert">
+                {{ bestCasePlan.msg }}
+              </div>
+              <div v-else-if="bestCasePlan.tooMany" class="plan-alert">
+                ⚠ Too many passes required ({{ bestCasePlan.passCount }}+). Use a heavier ship.
+              </div>
+              <div v-else>
+                <div class="plan-passes-list" role="list">
+                  <div
+                    v-for="(pass, i) in bestCasePlan.passes"
+                    :key="i"
+                    class="plan-pass-item"
+                    role="listitem"
+                  >
+                    <span class="plan-pass-n">{{ i + 1 }}</span>
+                    <span class="plan-pass-label">{{ pass.label }}</span>
+                    <span class="plan-pass-mass">{{ fmtMass(pass.mass) }}</span>
+                    <span class="plan-pass-running">{{ fmtMass(pass.running) }}</span>
+                  </div>
+                </div>
+                <div class="plan-footer">
+                  <span class="plan-footer-stat">
+                    Passes: <strong>{{ bestCasePlan.passes.length }}</strong>
+                  </span>
+                  <span class="plan-footer-stat">
+                    Total: <strong>{{ fmtMass(bestCasePlan.totalMass) }}</strong>
+                  </span>
+                  <span class="plan-footer-stat">
+                    Needed: <strong>{{ fmtMass(massToColMin) }}</strong>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Worst Case Plan (10% variance — most passes) -->
+            <div class="plan-card">
+              <div class="plan-card-header">
+                <div class="plan-card-title">Worst Case</div>
+                <div class="plan-card-subtitle">10% variance — wormhole has 10% more mass than described, must exceed {{ fmtMass(wormhole.totalMass * 1.1) }}</div>
+              </div>
+              <div v-if="worstCasePlan.alreadyCollapsed" class="plan-alert is-collapsed">
+                ✓ Wormhole has definitely collapsed (exceeded max possible mass).
+              </div>
+              <div v-else-if="worstCasePlan.impossible" class="plan-alert">
+                {{ worstCasePlan.msg }}
+              </div>
+              <div v-else-if="worstCasePlan.tooMany" class="plan-alert">
+                ⚠ Too many passes required ({{ worstCasePlan.passCount }}+). Use a heavier ship.
+              </div>
+              <div v-else>
+                <div class="plan-passes-list" role="list">
+                  <div
+                    v-for="(pass, i) in worstCasePlan.passes"
+                    :key="i"
+                    class="plan-pass-item"
+                    role="listitem"
+                  >
+                    <span class="plan-pass-n">{{ i + 1 }}</span>
+                    <span class="plan-pass-label">{{ pass.label }}</span>
+                    <span class="plan-pass-mass">{{ fmtMass(pass.mass) }}</span>
+                    <span class="plan-pass-running">{{ fmtMass(pass.running) }}</span>
+                  </div>
+                </div>
+                <div class="plan-footer">
+                  <span class="plan-footer-stat">
+                    Passes: <strong>{{ worstCasePlan.passes.length }}</strong>
+                  </span>
+                  <span class="plan-footer-stat">
+                    Total: <strong>{{ fmtMass(worstCasePlan.totalMass) }}</strong>
+                  </span>
+                  <span class="plan-footer-stat">
+                    Needed: <strong>{{ fmtMass(massToColMax) }}</strong>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /.plans-grid -->
+        </div>
+      </section>
+    </div>
+
+  </main><!-- /.app-main -->
+
+  <!-- ══════════════════════════════════════════════════════════
+       SHIP MODAL
+  ═══════════════════════════════════════════════════════════ -->
+  <div
+    v-if="shipModal.open"
+    class="modal-overlay"
+    @click.self="closeShipModal"
+    role="dialog"
+    aria-modal="true"
+    :aria-labelledby="shipModal.isNew ? 'modal-add-title' : 'modal-edit-title'"
+  >
+    <div class="modal">
+      <h2 class="modal-title" :id="shipModal.isNew ? 'modal-add-title' : 'modal-edit-title'">
+        {{ shipModal.isNew ? '+ Add Ship' : '✎ Edit Ship' }}
+      </h2>
+
+      <div class="modal-form">
+        <label class="form-label">
+          Ship Name
+          <input
+            v-model="shipModal.draft.name"
+            class="form-input"
+            placeholder="e.g. Loki, Proteus, Naglfar"
+            maxlength="60"
+            autocomplete="off"
+            @keyup.enter="saveShip"
+          >
+        </label>
+        <label class="form-label">
+          Cold Mass ({{ massUnit }}) — MWD off
+          <input
+            v-model.number="draftColdInput"
+            type="number"
+            min="0"
+            :step="unitStep"
+            class="form-input"
+            :placeholder="massUnit === 'kg' ? 'e.g. 300000000' : 'e.g. 300000'"
+            @keyup.enter="saveShip"
+          >
+        </label>
+        <label class="form-label">
+          Hot Mass ({{ massUnit }}) — MWD active
+          <input
+            v-model.number="draftHotInput"
+            type="number"
+            min="0"
+            :step="unitStep"
+            class="form-input"
+            :placeholder="massUnit === 'kg' ? 'e.g. 350000000' : 'e.g. 350000'"
+            @keyup.enter="saveShip"
+          >
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button @click="closeShipModal" class="btn btn-secondary">Cancel</button>
+        <button @click="saveShip" :disabled="!shipModalValid" class="btn btn-primary">
+          {{ shipModal.isNew ? 'Add Ship' : 'Save Changes' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
+<script>
+'use strict';
+
+const { createApp, ref, computed, watch, reactive } = Vue;
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+const STORAGE_SHIPS = 'eve-whr-ships-v1';
+const STORAGE_THEME = 'eve-whr-theme-v1';
+const STORAGE_WH    = 'eve-whr-wormhole-v1';
+const STORAGE_UNIT  = 'eve-whr-unit-v1';
+
+// Individual ship mass limits per wormhole size (stored internally in kg)
+const WH_SIZES = [
+  { id: 'small',  label: 'Small',             desc: 'Destroyer / HIC / Odysseus',         maxShipMass:     5_000_000 },
+  { id: 'medium', label: 'Medium',            desc: 'Battlecruiser',                       maxShipMass:    62_000_000 },
+  { id: 'large',  label: 'Large',             desc: 'Battleship / Orca',                   maxShipMass:   375_000_000 },
+  { id: 'xl',     label: 'Extra Large',       desc: 'Freighter / Rorqual',                 maxShipMass: 1_000_000_000 },
+  { id: 'xxl',    label: 'Extra Extra Large', desc: 'Capitals (excl. Supercarrier/Titan)', maxShipMass: 2_000_000_000 },
+];
+
+// ─── Pure Utilities ───────────────────────────────────────────────────────────
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+/** Format a number with K/M/B suffix (no unit label) */
+function _fmt(n) {
+  if (!n || n <= 0) return '0';
+  if (n >= 1e9) return (n / 1e9).toFixed(3).replace(/\.?0+$/, '') + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(3).replace(/\.?0+$/, '') + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.?0+$/, '') + 'K';
+  return Number(n).toFixed(0);
+}
+
+// ─── Optimal Pass Calculator (Web Worker) ─────────────────────────────────────
+// buildPlan runs in a Web Worker so the main thread never blocks.
+// Blob URL keeps this single-file and compatible with file://.
+const CALC_WORKER_SRC = `
+var MAX_PLAN_PASSES = 100;
+function buildPlan(options, target) {
+  if (target <= 0) return { alreadyCollapsed: true, passes: [], totalMass: 0 };
+  if (!options || !options.length) return { impossible: true, passes: [], totalMass: 0, msg: 'No eligible ships for this wormhole size.' };
+  var sorted   = options.slice().sort(function(a, b) { return b.mass - a.mass; });
+  var heaviest = sorted[0];
+  var lightest = sorted[sorted.length - 1];
+  if (heaviest.mass <= 0) return { impossible: true, passes: [], totalMass: 0, msg: 'All ships have zero mass.' };
+  var cumulative = 0;
+  var plan = [];
+  while (cumulative < target) {
+    plan.push(Object.assign({}, heaviest));
+    cumulative += heaviest.mass;
+    if (plan.length > MAX_PLAN_PASSES + 1) {
+      if (plan.length % 2 !== 0) { plan.push(Object.assign({}, lightest)); cumulative += lightest.mass; }
+      return { tooMany: true, passCount: plan.length, totalMass: cumulative };
+    }
+  }
+  if (plan.length % 2 !== 0) { plan.push(Object.assign({}, lightest)); cumulative += lightest.mass; }
+  var running = 0;
+  return {
+    passes: plan.map(function(p) { running += p.mass; return Object.assign({}, p, { running: running }); }),
+    totalMass: cumulative
+  };
+}
+self.onmessage = function(e) {
+  var d = e.data;
+  self.postMessage({
+    bestCasePlan:  buildPlan(d.options, d.massToColMin),
+    worstCasePlan: buildPlan(d.options, d.massToColMax),
+  });
+};
+`;
+const _calcWorkerBlob = new Blob([CALC_WORKER_SRC], { type: 'application/javascript' });
+const _calcWorkerUrl  = URL.createObjectURL(_calcWorkerBlob);
+const _calcWorker     = new Worker(_calcWorkerUrl);
+
+// ─── Vue Application ──────────────────────────────────────────────────────────
+createApp({
+  setup() {
+    // ── State ────────────────────────────────────────────────────────────────
+    const activeTab     = ref('setup');
+    const selectedTheme = ref(localStorage.getItem(STORAGE_THEME) || 'caldari');
+    const massUnit      = ref(localStorage.getItem(STORAGE_UNIT)  || 'kg'); // 'kg' | 't'
+
+    const savedWh = JSON.parse(localStorage.getItem(STORAGE_WH) || 'null');
+    const wormhole = reactive({
+      name:      savedWh?.name      ?? '',
+      totalMass: savedWh?.totalMass ?? 0,  // always stored in kg
+      status:    savedWh?.status    ?? 'stable',
+      size:      savedWh?.size      ?? '', // '' = unknown / not set
+    });
+
+    const ships  = ref(JSON.parse(localStorage.getItem(STORAGE_SHIPS) || '[]'));
+    const passes = ref([]); // session-only — intentionally not persisted
+
+    const passForm = reactive({
+      mode:       'ship',  // 'ship' | 'custom'
+      shipId:     '',
+      passType:   'cold',  // 'hot' | 'cold'
+      customMass: null,    // stored in kg
+    });
+
+    const shipModal = reactive({
+      open:  false,
+      isNew: true,
+      draft: { id: '', name: '', coldMass: null, hotMass: null }, // stored in kg
+    });
+
+    const yamlFileRef = ref(null);
+
+    // ── Persistence ──────────────────────────────────────────────────────────
+    watch(ships,    val => localStorage.setItem(STORAGE_SHIPS, JSON.stringify(val)), { deep: true });
+    watch(wormhole, val => localStorage.setItem(STORAGE_WH,   JSON.stringify({ ...val })), { deep: true });
+    watch(massUnit, val => localStorage.setItem(STORAGE_UNIT, val));
+
+    // ── Theme ────────────────────────────────────────────────────────────────
+    function applyTheme() {
+      document.documentElement.setAttribute('data-theme', selectedTheme.value);
+      localStorage.setItem(STORAGE_THEME, selectedTheme.value);
+    }
+    applyTheme();
+
+    // ── Unit helpers ─────────────────────────────────────────────────────────
+    /**
+     * Format a value stored in kg for display in the current unit.
+     * Returns e.g. "350\u202fkg" or "350\u202ft" (narrow no-break space before unit).
+     */
+    function fmtMass(kg) {
+      if (massUnit.value === 't') return _fmt(kg / 1000) + '\u202ft';
+      return _fmt(kg) + '\u202fkg';
+    }
+
+    /** Convert user input (in current unit) to kg for storage. */
+    function _toKg(v)  { return massUnit.value === 't' ? (Number(v) || 0) * 1000 : (Number(v) || 0); }
+    /** Convert kg to current display unit for populating input fields. */
+    function _fromKg(kg) { return (!kg || kg <= 0) ? null : massUnit.value === 't' ? kg / 1000 : kg; }
+
+    // Step size for number inputs (1M kg or 1K t = same physical mass)
+    const unitStep = computed(() => massUnit.value === 't' ? 1000 : 1_000_000);
+
+    // Computed setters bridge input values ↔ internal kg storage
+    const whTotalMassInput = computed({ get: () => _fromKg(wormhole.totalMass), set: v => { wormhole.totalMass = _toKg(v); } });
+    const draftColdInput   = computed({ get: () => _fromKg(shipModal.draft.coldMass), set: v => { shipModal.draft.coldMass = _toKg(v); } });
+    const draftHotInput    = computed({ get: () => _fromKg(shipModal.draft.hotMass),  set: v => { shipModal.draft.hotMass  = _toKg(v); } });
+    const customMassInput  = computed({ get: () => _fromKg(passForm.customMass),      set: v => { passForm.customMass = _toKg(v); } });
+
+    // ── Wormhole Size ────────────────────────────────────────────────────────
+    const whSizeInfo  = computed(() => WH_SIZES.find(s => s.id === wormhole.size) ?? null);
+    const whSizeLimit = computed(() => whSizeInfo.value?.maxShipMass ?? null); // kg or null
+
+    /** True if a mass (kg) fits through the configured wormhole size. */
+    function massFits(kg) { return !whSizeLimit.value || kg <= whSizeLimit.value; }
+
+    // ── Mass Computeds ───────────────────────────────────────────────────────
+    const usedMass = computed(() => passes.value.reduce((s, p) => s + p.mass, 0));
+    const usedPct  = computed(() => wormhole.totalMass > 0 ? (usedMass.value / wormhole.totalMass) * 100 : 0);
+
+    const massToReduced  = computed(() => Math.max(0, wormhole.totalMass * 0.5 - usedMass.value));
+    const massToCritical = computed(() => Math.max(0, wormhole.totalMass * 0.9 - usedMass.value));
+    const massToColMin   = computed(() => Math.max(0, wormhole.totalMass * 1.0 - usedMass.value));
+    const massToColMax   = computed(() => Math.max(0, wormhole.totalMass * 1.1 - usedMass.value));
+
+    // ── Mass Bar ─────────────────────────────────────────────────────────────
+    const barTotalWidth  = computed(() => wormhole.totalMass * 1.1 || 1);
+    const barFillStyle   = computed(() => {
+      const pct   = Math.min((usedMass.value / barTotalWidth.value) * 100, 100);
+      const color = usedPct.value >= 90 ? 'var(--color-bar-fill-danger)'
+                  : usedPct.value >= 50 ? 'var(--color-bar-fill-mid)'
+                  : 'var(--color-bar-fill-safe)';
+      return { width: pct + '%', backgroundColor: color };
+    });
+    const barVarianceStyle   = computed(() => { const l = (1/1.1)*100; return { left: l+'%', width: (100-l)+'%' }; });
+    const markerReducedLeft  = computed(() => (wormhole.totalMass * 0.5 / barTotalWidth.value * 100) + '%');
+    const markerCriticalLeft = computed(() => (wormhole.totalMass * 0.9 / barTotalWidth.value * 100) + '%');
+    const markerTotalLeft    = computed(() => (wormhole.totalMass * 1.0 / barTotalWidth.value * 100) + '%');
+
+    // ── Status ───────────────────────────────────────────────────────────────
+    const statusClass = computed(() => `status-${wormhole.status}`);
+
+    // ── Pass Form ────────────────────────────────────────────────────────────
+    const selectedShip  = computed(() => ships.value.find(s => s.id === passForm.shipId) ?? null);
+    const shipPassMass  = computed(() => {
+      if (!selectedShip.value) return 0;
+      return passForm.passType === 'hot' ? (selectedShip.value.hotMass || 0) : (selectedShip.value.coldMass || 0);
+    });
+    const shipPassFits  = computed(() => massFits(shipPassMass.value));
+    const canSubmitPass = computed(() => {
+      if (passForm.mode === 'ship') return !!passForm.shipId && shipPassMass.value > 0;
+      return Number(passForm.customMass) > 0;
+    });
+
+    // ── Pass History ─────────────────────────────────────────────────────────
+    const passesWithRunning = computed(() => {
+      let running = 0;
+      return passes.value.map((p, idx) => { running += p.mass; return { ...p, running, num: idx + 1 }; });
+    });
+    const passesReversed = computed(() => [...passesWithRunning.value].reverse());
+
+    function passLabel(pass) {
+      if (pass.mode === 'custom') return 'Custom Pass';
+      const ship = ships.value.find(s => s.id === pass.shipId);
+      return `${ship?.name ?? 'Unknown'} (${pass.passType === 'hot' ? '🔥 Hot' : '❄ Cold'})`;
+    }
+
+    // ── Calculator ───────────────────────────────────────────────────────────
+    // Only include ship+passType combos that fit through the wormhole size
+    const passOptions = computed(() => {
+      const opts = [];
+      for (const ship of ships.value) {
+        if ((ship.coldMass || 0) > 0 && massFits(ship.coldMass)) opts.push({ label: `${ship.name} — Cold`, mass: ship.coldMass });
+        if ((ship.hotMass  || 0) > 0 && massFits(ship.hotMass))  opts.push({ label: `${ship.name} — Hot`,  mass: ship.hotMass  });
+      }
+      return opts;
+    });
+
+    // Ships completely excluded by size (neither cold nor hot fits)
+    const excludedShips = computed(() =>
+      whSizeLimit.value
+        ? ships.value.filter(s => !massFits(s.coldMass || 0) && !massFits(s.hotMass || 0))
+        : []
+    );
+
+    const worstCasePlan = ref(null);
+    const bestCasePlan  = ref(null);
+    const calcBusy      = ref(false);
+    const calcDirty     = ref(true);
+
+    _calcWorker.onmessage = (e) => {
+      worstCasePlan.value = e.data.worstCasePlan;
+      bestCasePlan.value  = e.data.bestCasePlan;
+      calcBusy.value = false;
+    };
+
+    watch([passOptions, massToColMin, massToColMax], () => { calcDirty.value = true; });
+
+    function triggerCalc() {
+      if (!calcDirty.value) return;
+      calcBusy.value      = true;
+      worstCasePlan.value = null;
+      bestCasePlan.value  = null;
+      calcDirty.value     = false;
+      _calcWorker.postMessage({
+        options:      passOptions.value,
+        massToColMin: massToColMin.value,
+        massToColMax: massToColMax.value,
+      });
+    }
+
+    watch(activeTab, tab => { if (tab === 'calc') triggerCalc(); });
+
+    // ── Actions ──────────────────────────────────────────────────────────────
+    function addPass() {
+      if (!canSubmitPass.value) return;
+
+      // Warn if selected ship+passType cannot physically fit through this wormhole size
+      if (passForm.mode === 'ship' && whSizeLimit.value && !shipPassFits.value) {
+        const ok = confirm(
+          '\u26a0 Size Warning\n\n' +
+          `${selectedShip.value.name} (${passForm.passType}) mass is ${fmtMass(shipPassMass.value)}, ` +
+          `which exceeds the ${whSizeInfo.value.label} wormhole size limit of ${fmtMass(whSizeLimit.value)}.\n\n` +
+          'This ship cannot physically pass through this wormhole type.\n\nRecord anyway?'
+        );
+        if (!ok) return;
+      }
+
+      let entry;
+      if (passForm.mode === 'ship') {
+        entry = { id: genId(), mode: 'ship', shipId: passForm.shipId, passType: passForm.passType, mass: shipPassMass.value };
+      } else {
+        entry = { id: genId(), mode: 'custom', mass: Number(passForm.customMass) };
+        passForm.customMass = null;
+      }
+      passes.value.push(entry);
+    }
+
+    function removePass(id) {
+      const idx = passes.value.findIndex(p => p.id === id);
+      if (idx >= 0) passes.value.splice(idx, 1);
+    }
+
+    function clearPasses() {
+      if (confirm('Clear all recorded passes for this session?')) passes.value = [];
+    }
+
+    function resetSession() {
+      if (confirm('Reset everything? This will clear all passes and wormhole data.')) {
+        passes.value = []; wormhole.name = ''; wormhole.totalMass = 0;
+        wormhole.status = 'stable'; wormhole.size = '';
+      }
+    }
+
+    // ── Ship Management ──────────────────────────────────────────────────────
+    function openAddShip()    { shipModal.isNew = true; shipModal.draft = { id: '', name: '', coldMass: null, hotMass: null }; shipModal.open = true; }
+    function openEditShip(s)  { shipModal.isNew = false; shipModal.draft = { ...s }; shipModal.open = true; }
+    function closeShipModal() { shipModal.open = false; }
+
+    const shipModalValid = computed(() => {
+      const d = shipModal.draft;
+      return d.name?.trim().length > 0 && Number(d.coldMass) > 0 && Number(d.hotMass) > 0;
+    });
+
+    function saveShip() {
+      if (!shipModalValid.value) return;
+      const data = { ...shipModal.draft, coldMass: Number(shipModal.draft.coldMass), hotMass: Number(shipModal.draft.hotMass) };
+      if (shipModal.isNew) { data.id = genId(); ships.value.push(data); }
+      else { const i = ships.value.findIndex(s => s.id === data.id); if (i >= 0) ships.value.splice(i, 1, data); }
+      closeShipModal();
+    }
+
+    function deleteShip(id) {
+      if (confirm('Remove this ship from the fleet?')) ships.value = ships.value.filter(s => s.id !== id);
+    }
+
+    // ── YAML ─────────────────────────────────────────────────────────────────
+    // YAML always stores masses in kg for portability, regardless of display unit
+    function exportYAML() {
+      const text = jsyaml.dump(
+        { ships: ships.value.map(s => ({ name: s.name, coldMass: s.coldMass, hotMass: s.hotMass })) },
+        { lineWidth: 120 }
+      );
+      const a = Object.assign(document.createElement('a'), {
+        href: URL.createObjectURL(new Blob([text], { type: 'text/yaml' })),
+        download: 'wormhole-fleet.yaml',
+      });
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function triggerImport() { yamlFileRef.value.click(); }
+
+    function handleYAMLFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const parsed = jsyaml.load(e.target.result);
+          if (!parsed?.ships || !Array.isArray(parsed.ships)) { alert('Invalid YAML: expected a top-level "ships" list.'); return; }
+          const valid = parsed.ships.filter(s => s.name && Number(s.coldMass) > 0 && Number(s.hotMass) > 0);
+          if (!valid.length) { alert('No valid ships found in the YAML file.'); return; }
+          if (confirm(`Import ${valid.length} ship(s)?\nThis will replace your current fleet.`)) {
+            ships.value = valid.map(s => ({ id: genId(), name: String(s.name), coldMass: Number(s.coldMass), hotMass: Number(s.hotMass) }));
+          }
+        } catch (err) { alert('Failed to parse YAML: ' + err.message); }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function threshClass(val) { return val <= 0 ? 'text-success' : ''; }
+
+    // ── Expose to template ───────────────────────────────────────────────────
+    return {
+      activeTab, selectedTheme, massUnit, wormhole, ships, passes, passForm, shipModal, yamlFileRef,
+      WH_SIZES, whSizeInfo, whSizeLimit, excludedShips,
+      usedMass, usedPct,
+      massToReduced, massToCritical, massToColMin, massToColMax,
+      barFillStyle, barVarianceStyle, markerReducedLeft, markerCriticalLeft, markerTotalLeft,
+      statusClass, selectedShip, shipPassMass, shipPassFits, canSubmitPass,
+      passesReversed, passOptions, worstCasePlan, bestCasePlan, calcBusy,
+      shipModalValid, unitStep,
+      whTotalMassInput, draftColdInput, draftHotInput, customMassInput,
+      applyTheme, fmtMass, massFits,
+      addPass, removePass, clearPasses, resetSession,
+      passLabel, threshClass,
+      openAddShip, openEditShip, closeShipModal, saveShip, deleteShip,
+      exportYAML, triggerImport, handleYAMLFile,
+    };
+  },
+}).mount('#app');
+
+</script>
+</body>
+</html>
