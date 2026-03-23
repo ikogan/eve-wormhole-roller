@@ -654,20 +654,23 @@
                     ✓ Recorded passes{{ farSideShips.length ? ' + far side returns' : '' }} will collapse the wormhole.
                   </div>
                   <div v-if="displayBestCase.length" class="plan-passes-list" role="list">
-                    <div
-                      v-for="(row, i) in displayBestCase"
-                      :key="i"
-                      :class="['plan-pass-item', { 'is-far-side': row.rowType === 'far-side', 'is-final': row.isFinal }]"
-                      role="listitem"
-                    >
-                      <span class="plan-pass-n">{{ row.rowType === 'far-side' ? '⬅' : (i + 1) }}</span>
-                      <span class="plan-pass-label">
-                        {{ row.label }}
-                        <span v-if="row.isFinal" class="plan-collapse-icon" :title="rollingTarget === 'critical' ? 'Wormhole enters critical state' : 'Wormhole collapses'">⊗</span>
-                      </span>
-                      <span class="plan-pass-mass">{{ fmtMass(row.mass) }}</span>
-                      <span class="plan-pass-running">{{ fmtMass(row.running) }}</span>
-                    </div>
+                    <template v-for="(row, i) in displayBestCase" :key="i">
+                      <div v-if="row.rowType === 'threshold'" :class="['plan-threshold-sep', 'is-' + row.key]">
+                        <span>{{ row.label }}</span>
+                      </div>
+                      <div v-else
+                        :class="['plan-pass-item', { 'is-far-side': row.rowType === 'far-side', 'is-final': row.isFinal }]"
+                        role="listitem"
+                      >
+                        <span class="plan-pass-n">{{ row.rowType === 'far-side' ? '⬅' : row.num }}</span>
+                        <span class="plan-pass-label">
+                          {{ row.label }}
+                          <span v-if="row.isFinal" class="plan-collapse-icon" :title="rollingTarget === 'critical' ? 'Wormhole enters critical state' : 'Wormhole collapses'">⊗</span>
+                        </span>
+                        <span class="plan-pass-mass">{{ fmtMass(row.mass) }}</span>
+                        <span class="plan-pass-running">{{ fmtMass(row.running) }}</span>
+                      </div>
+                    </template>
                   </div>
                   <div v-if="!bestCasePlan.alreadyCollapsed && displayBestCase.length" class="plan-footer">
                     <span v-if="bestCasePlan.passes.length" class="plan-footer-stat">
@@ -705,20 +708,23 @@
                     ✓ Recorded passes{{ farSideShips.length ? ' + far side returns' : '' }} will definitely collapse the wormhole.
                   </div>
                   <div v-if="displayWorstCase.length" class="plan-passes-list" role="list">
-                    <div
-                      v-for="(row, i) in displayWorstCase"
-                      :key="i"
-                      :class="['plan-pass-item', { 'is-far-side': row.rowType === 'far-side', 'is-final': row.isFinal }]"
-                      role="listitem"
-                    >
-                      <span class="plan-pass-n">{{ row.rowType === 'far-side' ? '⬅' : (i + 1) }}</span>
-                      <span class="plan-pass-label">
-                        {{ row.label }}
-                        <span v-if="row.isFinal" class="plan-collapse-icon" :title="rollingTarget === 'critical' ? 'Wormhole enters critical state' : 'Wormhole collapses'">⊗</span>
-                      </span>
-                      <span class="plan-pass-mass">{{ fmtMass(row.mass) }}</span>
-                      <span class="plan-pass-running">{{ fmtMass(row.running) }}</span>
-                    </div>
+                    <template v-for="(row, i) in displayWorstCase" :key="i">
+                      <div v-if="row.rowType === 'threshold'" :class="['plan-threshold-sep', 'is-' + row.key]">
+                        <span>{{ row.label }}</span>
+                      </div>
+                      <div v-else
+                        :class="['plan-pass-item', { 'is-far-side': row.rowType === 'far-side', 'is-final': row.isFinal }]"
+                        role="listitem"
+                      >
+                        <span class="plan-pass-n">{{ row.rowType === 'far-side' ? '⬅' : row.num }}</span>
+                        <span class="plan-pass-label">
+                          {{ row.label }}
+                          <span v-if="row.isFinal" class="plan-collapse-icon" :title="rollingTarget === 'critical' ? 'Wormhole enters critical state' : 'Wormhole collapses'">⊗</span>
+                        </span>
+                        <span class="plan-pass-mass">{{ fmtMass(row.mass) }}</span>
+                        <span class="plan-pass-running">{{ fmtMass(row.running) }}</span>
+                      </div>
+                    </template>
                   </div>
                   <div v-if="!worstCasePlan.alreadyCollapsed && displayWorstCase.length" class="plan-footer">
                     <span v-if="worstCasePlan.passes.length" class="plan-footer-stat">

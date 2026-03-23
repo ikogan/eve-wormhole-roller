@@ -442,14 +442,45 @@ createApp({
     // ── Display Plans (rolling passes + far-side return rows merged) ──────────
     function buildDisplayPlan(plan) {
       if (!plan || plan.impossible || plan.tooMany) return [];
+
+      const base  = usedMass.value;       // mass already recorded this session
+      const total = wormhole.totalMass;
+      const thresholds = [
+        { key: 'reduced',   label: 'Reduced (50%)',    mass: total * 0.5 },
+        { key: 'critical',  label: 'Critical (90%)',   mass: total * 0.9 },
+        { key: 'collapsed', label: 'Collapsed (100%)', mass: total * 1.0 },
+      ].filter(t => t.mass > base); // skip thresholds already crossed
+
       const rollingRows = (plan.passes || []).map(p => ({ ...p, rowType: 'rolling' }));
       let running = plan.totalMass || 0;
       const farRows = farSideShips.value.map(f => {
         running += f.mass;
         return { rowType: 'far-side', label: f.label, mass: f.mass, running };
       });
-      const allRows = [...rollingRows, ...farRows];
-      if (allRows.length > 0) allRows[allRows.length - 1] = { ...allRows[allRows.length - 1], isFinal: true };
+      const rawRows = [...rollingRows, ...farRows];
+
+      // Interleave threshold separators at the point each threshold is crossed
+      const allRows = [];
+      let prevRunning = 0;
+      for (const row of rawRows) {
+        for (const thr of thresholds) {
+          const rel = thr.mass - base; // threshold relative to plan start
+          if (prevRunning < rel && row.running >= rel) {
+            allRows.push({ rowType: 'threshold', label: thr.label, key: thr.key });
+          }
+        }
+        allRows.push({ ...row });
+        prevRunning = row.running;
+      }
+
+      // Assign sequential pass numbers (skipping threshold rows) and mark final
+      let passNum = 0;
+      let lastPassIdx = -1;
+      for (let i = 0; i < allRows.length; i++) {
+        if (allRows[i].rowType !== 'threshold') { allRows[i].num = ++passNum; lastPassIdx = i; }
+      }
+      if (lastPassIdx >= 0) allRows[lastPassIdx] = { ...allRows[lastPassIdx], isFinal: true };
+
       return allRows;
     }
     const displayBestCase  = computed(() => buildDisplayPlan(bestCasePlan.value));

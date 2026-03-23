@@ -884,6 +884,31 @@ input[type="number"] { -moz-appearance: textfield; }
   font-weight: 700;
 }
 
+.plan-threshold-sep {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.plan-threshold-sep::before,
+.plan-threshold-sep::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.3;
+}
+
+.plan-threshold-sep.is-reduced   { color: var(--color-text-secondary); }
+.plan-threshold-sep.is-critical  { color: var(--color-warning); }
+.plan-threshold-sep.is-collapsed { color: var(--color-danger); }
+
 .plan-pass-n {
   font-family: var(--font-mono);
   font-size: 0.68rem;
