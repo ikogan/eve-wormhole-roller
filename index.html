@@ -520,7 +520,7 @@
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <div class="plan-view-tabs" role="group">
                   <button class="pass-type-tab" :class="{ active: planViewMode === 'remaining' }" @click="planViewMode = 'remaining'">From Here</button>
-                  <button class="pass-type-tab" :class="{ active: planViewMode !== 'remaining' }" @click="if (planViewMode === 'remaining') planViewMode = 'full'">Full Plan</button>
+                  <button class="pass-type-tab" :class="{ active: planViewMode !== 'remaining' }" @click="planViewMode = planViewMode === 'remaining' ? 'full' : planViewMode">Full Plan</button>
                 </div>
                 <div v-if="planViewMode !== 'remaining'" class="plan-view-tabs" role="group">
                   <button class="pass-type-tab" :class="{ active: planViewMode === 'full' }" @click="planViewMode = 'full'" title="Ignore all recorded passes and state changes">No State</button>
