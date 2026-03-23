@@ -245,7 +245,7 @@
             <template v-if="farSideForm.mode === 'ship'">
               <div class="form-row">
                 <label class="form-label" for="far-ship-select">Ship</label>
-                <select id="far-ship-select" class="form-control" v-model="farSideForm.shipId">
+                <select id="far-ship-select" class="form-input" v-model="farSideForm.shipId">
                   <option value="">— select ship —</option>
                   <option v-for="s in ships" :key="s.id" :value="s.id">{{ s.name }}</option>
                 </select>
@@ -268,12 +268,12 @@
             <template v-else>
               <div class="form-row">
                 <label class="form-label" for="far-custom-label">Label</label>
-                <input id="far-custom-label" class="form-control" type="text"
+                <input id="far-custom-label" class="form-input" type="text"
                        placeholder="e.g. Tengu" v-model="farSideForm.customLabel">
               </div>
               <div class="form-row">
                 <label class="form-label" for="far-custom-mass">Mass ({{ massUnit }})</label>
-                <input id="far-custom-mass" class="form-control" type="number" min="0"
+                <input id="far-custom-mass" class="form-input" type="number" min="0"
                        :step="unitStep" :placeholder="massUnit === 't' ? '0.000' : '0'"
                        v-model.number="farSideCustomMassInput">
               </div>
