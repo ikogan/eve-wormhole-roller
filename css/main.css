@@ -894,9 +894,10 @@ input[type="number"] { -moz-appearance: textfield; }
 }
 
 .plan-pilots-input {
-  width: 52px;
-  padding: 3px 6px;
-  font-size: 0.8rem;
+  width: 56px;
+  min-height: unset;
+  padding: 4px 6px;
+  font-size: 0.85rem;
   text-align: center;
 }
 

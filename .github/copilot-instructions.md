@@ -23,6 +23,8 @@ This regenerates `eve-wormhole-roller.html` for local testing. The file is gitig
 
 **Each approval covers exactly one specific operation.** Approval to push a branch does not imply approval to create a PR. Approval to create a PR does not imply approval to merge it. Always ask separately for each distinct GitHub action, every time.
 
+✅ **Positive feedback recorded (2026-03-23):** The user explicitly appreciated being asked before merging a PR rather than merging autonomously. This is the correct behavior — always ask.
+
 **Never assume urgency justifies skipping approval** — even for obvious regressions or fixes. This includes when the system indicates the user is unavailable and to "work autonomously" — autonomous work applies only to local operations.
 
 Local-only git operations (checkout, commit, add, stash, local branch creation) are fine without asking.

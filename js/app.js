@@ -37,117 +37,217 @@ function _fmt(n) {
 
 // ─── Multi-Pilot Pass Calculator (Web Worker) ─────────────────────────────────
 /**
- * Algorithm: given N pilots, K "heavy cold" round-trips are needed before the
- * final hot pass. Decompose K = M*N + (finalPilots-1): M full N-pilot bulk rounds
- * plus (finalPilots-1) extra pilots in the final group. This minimises passes
- * while guaranteeing every ship ends on the home side.
+ * Algorithm overview:
  *
- * Key constraint: the cold enter + scout returns must NOT collapse the wormhole
- * by themselves — only the final hot return should collapse it.
+ * We need to push at least `targetCapacity` kg through the wormhole to collapse
+ * it, with two hard constraints:
+ *   1. All mass BEFORE the final hot return must be < targetCapacity (WH stays open).
+ *   2. The final hot return must bring total mass to >= targetCapacity (WH collapses).
+ *
+ * Structure: K "bulk" round-trips (any hot/cold mix) decomposed into M full
+ * N-pilot groups plus a final group with the remaining K%N extra RTs and the
+ * collapse pass. Minimum passes is achieved by:
+ *   - Using the heaviest ship at HOT for bulk passes (max mass per pass).
+ *   - Switching the minimum number of bulk passes to cold/cold (or hot/cold) when
+ *     the all-hot total would exceed the upper bound of the allowed window.
+ *   - Trying every ship as the "finalShip" (makes the last hot return).
  *
  * Worker runs off the main thread via a Blob URL (works on file:// and http://).
  */
 const CALC_WORKER_SRC = `
 var MAX_GROUPS = 60;
+var MAX_K_EXTRA = 3; // extra K values to try beyond kMin if kMin itself doesn't fit
 
-// targetCapacity: the specific WH capacity we're planning for (either min or max).
+// targetCapacity: the specific WH capacity we're planning for (min or max variant).
 function buildMultiPilotPlan(mpOptions, numPilots, scoutMasses, targetCapacity) {
   if (targetCapacity <= 0) return { alreadyCollapsed: true, groups: [] };
   if (!mpOptions || !mpOptions.length) return { impossible: true, msg: 'No eligible ships for this wormhole size.' };
 
-  // Sort ships by cold mass descending; heaviest ship does bulk round-trips
-  var sorted = mpOptions.slice().sort(function(a, b) { return b.coldMass - a.coldMass; });
+  // Sort by hot mass descending — heaviest hot ship maximises mass per bulk pass
+  var sorted = mpOptions.slice().sort(function(a, b) { return b.hotMass - a.hotMass; });
   var heavy = sorted[0];
-  if (!heavy.coldMass) return { impossible: true, msg: 'All ships have zero cold mass.' };
+  if (!heavy.hotMass) return { impossible: true, msg: 'All ships have zero hot mass.' };
 
   var scoutMassTotal = 0;
   for (var s = 0; s < scoutMasses.length; s++) scoutMassTotal += scoutMasses[s];
 
-  var heavyColdRT = 2 * heavy.coldMass; // mass of one heavy-ship cold round trip
+  // Each bulk round-trip uses the heavy ship; hot/hot is the maximum, cold/cold is the minimum.
+  var maxRT = 2 * heavy.hotMass;   // hot enter + hot return
+  var minRT = 2 * heavy.coldMass;  // cold enter + cold return
+  if (minRT <= 0) minRT = maxRT;   // cold mass absent: only hot available
 
-  // Try each ship as the final (hot-return) ship, heaviest first
+  var bestResult = null;
+
+  // Try every ship as the final collapse ship (makes the very last hot return pass)
   for (var si = 0; si < sorted.length; si++) {
     var finalShip = sorted[si];
-    if (!finalShip.hotMass) continue; // must be able to go hot for the final pass
+    if (!finalShip.hotMass) continue;
 
-    // Total consumed = K * heavyColdRT + finalShip.coldMass + scoutMassTotal + finalShip.hotMass
-    // "before hot" = K * heavyColdRT + finalShip.coldMass + scoutMassTotal
-    // Constraint 1: before hot < targetCapacity (cold enter + scouts don't collapse WH alone)
-    // Constraint 2: before hot + finalShip.hotMass >= targetCapacity (hot return collapses WH)
-    var fixedMass = finalShip.coldMass + scoutMassTotal + finalShip.hotMass;
+    // Fixed mass in the final group that happens BEFORE the hot return:
+    //   finalShip cold enter + scout returns
     var beforeHotBase = finalShip.coldMass + scoutMassTotal;
+    if (beforeHotBase >= targetCapacity) continue; // WH would already collapse without the hot pass
 
-    // If the cold enter + scouts alone already >= targetCapacity, skip this ship
-    if (beforeHotBase >= targetCapacity) continue;
+    // Bulk mass window: the K bulk round-trips must land in [M_min, M_max]
+    // so that (bulk + beforeHotBase) < targetCapacity  AND
+    //         (bulk + beforeHotBase + finalShip.hotMass) >= targetCapacity
+    var M_min = targetCapacity - finalShip.hotMass - beforeHotBase;
+    var M_max = targetCapacity - beforeHotBase - 1; // strict <, subtract 1 kg
 
-    // kMin: minimum K such that total >= targetCapacity (constraint 2)
-    var kMin = fixedMass >= targetCapacity ? 0 : Math.ceil((targetCapacity - fixedMass) / heavyColdRT);
+    if (M_max < 0) continue;
 
-    // kMax: maximum K such that before-hot < targetCapacity (constraint 1)
-    // K * heavyColdRT + beforeHotBase < targetCapacity → K < (targetCapacity - beforeHotBase) / heavyColdRT
-    // Using -1 (one kg) to make the strict inequality safe with floating point
-    var kMax = Math.floor((targetCapacity - beforeHotBase - 1) / heavyColdRT);
+    // Minimum K round-trips to reach M_min using maximum-mass hot passes
+    var kMin = M_min <= 0 ? 0 : Math.ceil(M_min / maxRT);
 
-    if (kMin <= kMax && kMax >= 0) {
-      var result = _makeGroups(kMin, numPilots, heavy, finalShip, scoutMasses);
-      if (result.totalGroups <= MAX_GROUPS) return result;
+    // Try kMin and a few increments (in case kMin itself doesn't produce an in-range mix)
+    for (var kTry = kMin; kTry <= kMin + MAX_K_EXTRA; kTry++) {
+      var config = _findBulkConfig(kTry, heavy, M_min, M_max, maxRT, minRT);
+      if (!config) continue;
+
+      var result = _makeGroups(kTry, numPilots, heavy, finalShip, config, scoutMasses, scoutMassTotal);
+      if (result && result.totalGroups <= MAX_GROUPS) {
+        if (!bestResult || result.totalPasses < bestResult.totalPasses) {
+          bestResult = result;
+        }
+        break; // found a valid result for this final ship — kMin is already minimum K
+      }
     }
   }
 
-  return { impossible: true, msg: 'No valid plan found. Try adding ships with different mass values or more pilots.' };
+  return bestResult || { impossible: true, msg: 'No valid plan found. Try adding ships with different mass values or more pilots.' };
 }
 
-function _makeGroups(K, numPilots, heavyShip, finalShip, scoutMasses) {
-  var M = Math.floor(K / numPilots);
-  var finalPilots = (K % numPilots) + 1; // 1..numPilots pilots in the final group
-  var groups = [];
+/**
+ * Given K bulk round-trips and the heavy ship, find a hot/cold mix whose total
+ * mass lands in [M_min, M_max].
+ *
+ * Each round-trip is one of:
+ *   "hot"  — hot enter + hot return  = 2 * hotMass
+ *   "mix"  — hot enter + cold return = hotMass + coldMass  (saves one coldMass-hotMass gap)
+ *   "cold" — cold enter + cold return = 2 * coldMass
+ *
+ * Strategy: start all-hot, then switch whole round-trips to cold/cold. If the
+ * granularity of a full cold switch overshoots, try one "mix" RT (hot+cold) to
+ * get finer control.
+ */
+function _findBulkConfig(K, heavy, M_min, M_max, maxRT, minRT) {
+  if (K === 0) {
+    return (M_min <= 0) ? { hotRTs: 0, mixRTs: 0, coldRTs: 0, total: 0 } : null;
+  }
 
-  // M full bulk groups: all N pilots do a cold round-trip
-  for (var i = 0; i < M; i++) {
+  var allHotTotal = K * maxRT;
+
+  // All-hot already in range?
+  if (allHotTotal >= M_min && allHotTotal <= M_max) {
+    return { hotRTs: K, mixRTs: 0, coldRTs: 0, total: allHotTotal };
+  }
+
+  if (allHotTotal > M_max) {
+    // Need to reduce. Switch some round-trips from hot/hot toward cold/cold.
+    var savingsFull = maxRT - minRT;          // per cold/cold switch
+    var savingsHalf = heavy.hotMass - heavy.coldMass; // per mix (hot+cold) switch
+
+    // Minimum full cold switches needed to get total into range
+    var nFull = savingsFull > 0 ? Math.ceil((allHotTotal - M_max) / savingsFull) : K + 1;
+    if (nFull > K) return null;
+
+    var totalAfterFull = allHotTotal - nFull * savingsFull;
+    if (totalAfterFull >= M_min && totalAfterFull <= M_max) {
+      return { hotRTs: K - nFull, mixRTs: 0, coldRTs: nFull, total: totalAfterFull };
+    }
+
+    // totalAfterFull < M_min: nFull switched too many. Try (nFull-1) full + 1 mix.
+    if (nFull > 0 && savingsHalf > 0) {
+      var totalMixed = allHotTotal - (nFull - 1) * savingsFull - savingsHalf;
+      if (totalMixed >= M_min && totalMixed <= M_max) {
+        return { hotRTs: K - nFull, mixRTs: 1, coldRTs: nFull - 1, total: totalMixed };
+      }
+    }
+
+    // Try nFull cold switches without any mix (may be just barely outside range)
+    // If still > M_max, add one more switch
+    if (totalAfterFull > M_max && nFull < K) {
+      var totalExtra = allHotTotal - (nFull + 1) * savingsFull;
+      if (totalExtra >= M_min && totalExtra <= M_max) {
+        return { hotRTs: K - nFull - 1, mixRTs: 0, coldRTs: nFull + 1, total: totalExtra };
+      }
+    }
+  }
+
+  // allHotTotal < M_min: K is too small — caller should try a larger K
+  return null;
+}
+
+/**
+ * Build the group structure from K total bulk round-trips plus the final group.
+ *
+ * K decomposes as: M full N-pilot bulk groups + extraRTs extra round-trips that
+ * live inside the final group (before the collapse pass).
+ *
+ * config.hotRTs  round-trips use hot enter + hot return (heaviest)
+ * config.mixRTs  round-trips use hot enter + cold return (one direction each)
+ * config.coldRTs round-trips use cold enter + cold return (lightest)
+ *
+ * Round-trips are allocated hottest-first so that the heavier passes happen in
+ * early bulk groups (the final group extras will tend to be the lighter cold passes,
+ * giving more control near the collapse threshold).
+ */
+function _makeGroups(K, numPilots, heavyShip, finalShip, config, scoutMasses, scoutMassTotal) {
+  // Pre-build the ordered list of K round-trips (hottest first).
+  // Each rt: { em, et } = enter mass/type; { rm, rt } = return mass/type.
+  var rts = [];
+  for (var i = 0; i < config.hotRTs;  i++) rts.push({ em: heavyShip.hotMass,  et: 'hot',  rm: heavyShip.hotMass,  rt: 'hot'  });
+  for (var i = 0; i < config.mixRTs;  i++) rts.push({ em: heavyShip.hotMass,  et: 'hot',  rm: heavyShip.coldMass, rt: 'cold' });
+  for (var i = 0; i < config.coldRTs; i++) rts.push({ em: heavyShip.coldMass, et: 'cold', rm: heavyShip.coldMass, rt: 'cold' });
+
+  var M        = Math.floor(K / numPilots); // full N-pilot bulk groups
+  var extraRTs = K % numPilots;             // extra RTs inside the final group
+  var groups   = [];
+
+  // M full bulk groups — all N pilots do one round-trip each
+  for (var gi = 0; gi < M; gi++) {
     var enters = [], returns = [];
+    var base = gi * numPilots;
     for (var p = 0; p < numPilots; p++) {
-      enters.push({ name: heavyShip.name, mass: heavyShip.coldMass, passType: 'cold', direction: 'enter' });
-      returns.push({ name: heavyShip.name, mass: heavyShip.coldMass, passType: 'cold', direction: 'return' });
+      var rt = rts[base + p];
+      enters.push({ name: heavyShip.name, mass: rt.em, passType: rt.et, direction: 'enter' });
+      returns.push({ name: heavyShip.name, mass: rt.rm, passType: rt.rt, direction: 'return' });
     }
     groups.push({ type: 'bulk', pilotCount: numPilots, enters: enters, scoutReturns: [], returns: returns });
   }
 
-  // Final group: (finalPilots-1) heavy cold round-trips + 1 final-ship cold enter,
-  // then scouts return, then (finalPilots-1) heavy cold returns + 1 final-ship hot return
+  // Final group: extraRTs extra round-trips + finalShip cold enter + scouts + returns + hot collapse
   var fgEnters = [], fgReturns = [], fgScouts = [];
-  for (var p = 0; p < finalPilots - 1; p++) {
-    fgEnters.push({ name: heavyShip.name, mass: heavyShip.coldMass, passType: 'cold', direction: 'enter' });
-    fgReturns.push({ name: heavyShip.name, mass: heavyShip.coldMass, passType: 'cold', direction: 'return' });
+  var fgPilots = extraRTs + 1; // +1 for the finalShip pilot
+  var fgBase   = M * numPilots;
+
+  for (var p = 0; p < extraRTs; p++) {
+    var rt = rts[fgBase + p];
+    fgEnters.push({ name: heavyShip.name, mass: rt.em, passType: rt.et, direction: 'enter' });
+    fgReturns.push({ name: heavyShip.name, mass: rt.rm, passType: rt.rt, direction: 'return' });
   }
+
   fgEnters.push({ name: finalShip.name, mass: finalShip.coldMass, passType: 'cold', direction: 'enter' });
 
   for (var s = 0; s < scoutMasses.length; s++) {
     fgScouts.push({ name: 'Scout', mass: scoutMasses[s], passType: 'cold', direction: 'return', isScout: true });
   }
 
-  // The very last pass: final ship returns hot to guarantee collapse
   fgReturns.push({ name: finalShip.name, mass: finalShip.hotMass, passType: 'hot', direction: 'return', isFinal: true });
 
-  var scoutMassTotal = 0;
-  for (var s = 0; s < scoutMasses.length; s++) scoutMassTotal += scoutMasses[s];
-  var totalMass = K * 2 * heavyShip.coldMass + finalShip.coldMass + scoutMassTotal + finalShip.hotMass;
-  // passes: bulk round-trips + final group enters + scouts + returns (incl. final hot)
-  var totalPasses = M * 2 * numPilots + fgEnters.length + fgScouts.length + fgReturns.length;
+  groups.push({ type: 'final', pilotCount: fgPilots, enters: fgEnters, scoutReturns: fgScouts, returns: fgReturns });
 
-  groups.push({ type: 'final', pilotCount: finalPilots, enters: fgEnters, scoutReturns: fgScouts, returns: fgReturns });
+  var totalPasses = 0;
+  for (var g = 0; g < groups.length; g++) {
+    totalPasses += groups[g].enters.length + groups[g].scoutReturns.length + groups[g].returns.length;
+  }
+  var totalMass = config.total + finalShip.coldMass + scoutMassTotal + finalShip.hotMass;
 
-  return {
-    groups: groups,
-    totalMass: totalMass,
-    totalPasses: totalPasses,
-    totalGroups: groups.length,
-  };
+  return { groups: groups, totalMass: totalMass, totalPasses: totalPasses, totalGroups: groups.length };
 }
 
 self.onmessage = function(e) {
   var d = e.data;
-  // Best case: plan for minimum WH capacity (fewer passes if WH needs less mass)
-  // Worst case: plan to guarantee collapse even at maximum variance
   self.postMessage({
     bestCasePlan:  buildMultiPilotPlan(d.mpOptions, d.numPilots, d.scoutMasses, d.massToColMin),
     worstCasePlan: buildMultiPilotPlan(d.mpOptions, d.numPilots, d.scoutMasses, d.massToColMax),
