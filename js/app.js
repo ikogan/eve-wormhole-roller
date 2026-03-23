@@ -3,11 +3,12 @@
 const { createApp, ref, computed, watch, reactive } = Vue;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const STORAGE_SHIPS  = 'eve-whr-ships-v1';
-const STORAGE_THEME  = 'eve-whr-theme-v1';
-const STORAGE_WH     = 'eve-whr-wormhole-v1';
-const STORAGE_UNIT   = 'eve-whr-unit-v1';
-const STORAGE_PASSES = 'eve-whr-passes-v1';
+const STORAGE_SHIPS    = 'eve-whr-ships-v1';
+const STORAGE_THEME    = 'eve-whr-theme-v1';
+const STORAGE_WH       = 'eve-whr-wormhole-v1';
+const STORAGE_UNIT     = 'eve-whr-unit-v1';
+const STORAGE_PASSES   = 'eve-whr-passes-v1';
+const STORAGE_FAR_SIDE = 'eve-whr-far-side-v1';
 
 // Individual ship mass limits per wormhole size (stored internally in kg)
 const WH_SIZES = [
@@ -93,14 +94,23 @@ createApp({
       size:      savedWh?.size      ?? '', // '' = unknown / not set
     });
 
-    const ships  = ref(JSON.parse(localStorage.getItem(STORAGE_SHIPS) || '[]'));
-    const passes = ref(JSON.parse(localStorage.getItem(STORAGE_PASSES) || '[]'));
+    const ships      = ref(JSON.parse(localStorage.getItem(STORAGE_SHIPS)    || '[]'));
+    const passes     = ref(JSON.parse(localStorage.getItem(STORAGE_PASSES)   || '[]'));
+    const farSideShips = ref(JSON.parse(localStorage.getItem(STORAGE_FAR_SIDE) || '[]'));
 
     const passForm = reactive({
       mode:       'ship',  // 'ship' | 'custom'
       shipId:     '',
       passType:   'cold',  // 'hot' | 'cold'
       customMass: null,    // stored in kg
+    });
+
+    const farSideForm = reactive({
+      mode:        'ship',  // 'ship' | 'custom'
+      shipId:      '',
+      passType:    'cold',
+      customMass:  null,    // stored in kg
+      customLabel: '',
     });
 
     const shipModal = reactive({
@@ -112,8 +122,9 @@ createApp({
     const yamlFileRef = ref(null);
 
     // ── Persistence ──────────────────────────────────────────────────────────
-    watch(ships,    val => localStorage.setItem(STORAGE_SHIPS,  JSON.stringify(val)), { deep: true });
-    watch(passes,   val => localStorage.setItem(STORAGE_PASSES, JSON.stringify(val)), { deep: true });
+    watch(ships,       val => localStorage.setItem(STORAGE_SHIPS,    JSON.stringify(val)), { deep: true });
+    watch(passes,      val => localStorage.setItem(STORAGE_PASSES,   JSON.stringify(val)), { deep: true });
+    watch(farSideShips,val => localStorage.setItem(STORAGE_FAR_SIDE, JSON.stringify(val)), { deep: true });
     watch(wormhole, val => localStorage.setItem(STORAGE_WH,    JSON.stringify({ ...val })), { deep: true });
     watch(massUnit, val => localStorage.setItem(STORAGE_UNIT, val));
 
@@ -163,6 +174,31 @@ createApp({
     const massToCritical = computed(() => Math.max(0, wormhole.totalMass * 0.9 - usedMass.value));
     const massToColMin   = computed(() => Math.max(0, wormhole.totalMass * 1.0 - usedMass.value));
     const massToColMax   = computed(() => Math.max(0, wormhole.totalMass * 1.1 - usedMass.value));
+
+    // ── Far Side Ships ───────────────────────────────────────────────────────
+    const farSideMass = computed(() => farSideShips.value.reduce((s, f) => s + f.mass, 0));
+    // Mass remaining for rolling passes after far-side ships return
+    const effectiveMassToColMin = computed(() => Math.max(0, massToColMin.value - farSideMass.value));
+    const effectiveMassToColMax = computed(() => Math.max(0, massToColMax.value - farSideMass.value));
+    // True when far-side ships alone will bring the WH into its collapse window
+    const farSideAloneCollapses  = computed(() => farSideMass.value > 0 && farSideMass.value >= massToColMin.value);
+    const farSideOverCollapses   = computed(() => farSideMass.value > massToColMax.value);
+
+    const farSideSelectedShip = computed(() => ships.value.find(s => s.id === farSideForm.shipId) ?? null);
+    const farSideShipMass     = computed(() => {
+      if (!farSideSelectedShip.value) return 0;
+      return farSideForm.passType === 'hot'
+        ? (farSideSelectedShip.value.hotMass  || 0)
+        : (farSideSelectedShip.value.coldMass || 0);
+    });
+    const canSubmitFarSide = computed(() => {
+      if (farSideForm.mode === 'ship') return !!farSideForm.shipId && farSideShipMass.value > 0;
+      return Number(farSideForm.customMass) > 0;
+    });
+    const farSideCustomMassInput = computed({
+      get: () => _fromKg(farSideForm.customMass),
+      set: v  => { farSideForm.customMass = _toKg(Number(v) || 0) || null; },
+    });
 
     // ── Mass Bar ─────────────────────────────────────────────────────────────
     const barTotalWidth  = computed(() => wormhole.totalMass * 1.1 || 1);
@@ -248,6 +284,7 @@ createApp({
 
     // Mark dirty whenever the inputs that affect the calc change
     watch([passOptions, massToColMin, massToColMax], () => { calcDirty.value = true; });
+    watch(farSideShips, () => { calcDirty.value = true; }, { deep: true });
 
     // Only calculate when the user navigates to the Calculator tab
     function triggerCalc() {
@@ -258,8 +295,8 @@ createApp({
       calcDirty.value     = false;
       _calcWorker.postMessage({
         options:      passOptions.value,
-        massToColMin: massToColMin.value,
-        massToColMax: massToColMax.value,
+        massToColMin: effectiveMassToColMin.value,
+        massToColMax: effectiveMassToColMax.value,
       });
     }
 
@@ -300,10 +337,39 @@ createApp({
     }
 
     function resetSession() {
-      if (confirm('Reset everything? This will clear all passes and wormhole data.')) {
-        passes.value = []; wormhole.name = ''; wormhole.totalMass = 0;
+      if (confirm('Reset everything? This will clear all passes, far side ships, and wormhole data.')) {
+        passes.value = []; farSideShips.value = [];
+        wormhole.name = ''; wormhole.totalMass = 0;
         wormhole.status = 'stable'; wormhole.size = '';
       }
+    }
+
+    // ── Far Side Ships Management ─────────────────────────────────────────────
+    function addFarSideShip() {
+      if (!canSubmitFarSide.value) return;
+      let entry;
+      if (farSideForm.mode === 'ship') {
+        entry = {
+          id: genId(), mode: 'ship',
+          shipId: farSideForm.shipId, passType: farSideForm.passType,
+          label: `${farSideSelectedShip.value.name} (${farSideForm.passType === 'hot' ? '♨ Hot' : '❄ Cold'})`,
+          mass: farSideShipMass.value,
+        };
+      } else {
+        entry = {
+          id: genId(), mode: 'custom',
+          label: farSideForm.customLabel.trim() || 'Custom Ship',
+          mass: Number(farSideForm.customMass),
+        };
+        farSideForm.customMass  = null;
+        farSideForm.customLabel = '';
+      }
+      farSideShips.value.push(entry);
+    }
+
+    function removeFarSideShip(id) {
+      const idx = farSideShips.value.findIndex(f => f.id === id);
+      if (idx >= 0) farSideShips.value.splice(idx, 1);
     }
 
     // ── Ship Management ──────────────────────────────────────────────────────
@@ -372,6 +438,9 @@ createApp({
       WH_SIZES, whSizeInfo, whSizeLimit, excludedShips, coldOnlyShips,
       usedMass, usedPct,
       massToReduced, massToCritical, massToColMin, massToColMax,
+      farSideShips, farSideForm, farSideMass, farSideSelectedShip, farSideShipMass,
+      canSubmitFarSide, farSideCustomMassInput, farSideAloneCollapses, farSideOverCollapses,
+      effectiveMassToColMin, effectiveMassToColMax,
       barFillStyle, barVarianceStyle, markerReducedLeft, markerCriticalLeft, markerTotalLeft,
       statusClass, selectedShip, shipPassMass, shipPassFits, canSubmitPass,
       passesReversed, passOptions, worstCasePlan, bestCasePlan, calcBusy,
@@ -379,6 +448,7 @@ createApp({
       whTotalMassInput, draftColdInput, draftHotInput, customMassInput,
       applyTheme, fmtMass, massFits,
       addPass, removePass, clearPasses, resetSession,
+      addFarSideShip, removeFarSideShip,
       passLabel, threshClass,
       openAddShip, openEditShip, closeShipModal, saveShip, deleteShip,
       exportYAML, triggerImport, handleYAMLFile,

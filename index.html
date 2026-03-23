@@ -222,6 +222,99 @@
           </div>
         </section>
 
+        <!-- Far Side Ships ──────────────────────────────────────────────── -->
+        <section class="card" aria-labelledby="far-side-title">
+          <h2 class="card-title" id="far-side-title">Far Side Ships</h2>
+          <p style="font-size:0.8rem;color:var(--color-text-muted);margin-bottom:12px">
+            Ships on the far side of the wormhole that must return before the final roll.
+            The calculator will reserve their mass and ensure they can pass through first.
+          </p>
+
+          <!-- Add form -->
+          <div class="modal-form" style="margin-bottom:12px">
+            <div class="form-row">
+              <label class="form-label">Type</label>
+              <div class="toggle-group">
+                <button :class="['btn btn-xs', farSideForm.mode === 'ship' ? 'btn-primary' : 'btn-secondary']"
+                        @click="farSideForm.mode = 'ship'">Fleet Ship</button>
+                <button :class="['btn btn-xs', farSideForm.mode === 'custom' ? 'btn-primary' : 'btn-secondary']"
+                        @click="farSideForm.mode = 'custom'">Custom</button>
+              </div>
+            </div>
+
+            <template v-if="farSideForm.mode === 'ship'">
+              <div class="form-row">
+                <label class="form-label" for="far-ship-select">Ship</label>
+                <select id="far-ship-select" class="form-input" v-model="farSideForm.shipId">
+                  <option value="">— select ship —</option>
+                  <option v-for="s in ships" :key="s.id" :value="s.id">{{ s.name }}</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label class="form-label">Pass Type</label>
+                <div class="toggle-group">
+                  <button :class="['btn btn-xs', farSideForm.passType === 'cold' ? 'btn-primary' : 'btn-secondary']"
+                          @click="farSideForm.passType = 'cold'">❄ Cold</button>
+                  <button :class="['btn btn-xs', farSideForm.passType === 'hot' ? 'btn-primary' : 'btn-secondary']"
+                          @click="farSideForm.passType = 'hot'">♨ Hot</button>
+                </div>
+              </div>
+              <div v-if="farSideSelectedShip && farSideShipMass > 0" class="form-row">
+                <label class="form-label">Mass</label>
+                <span class="form-hint">{{ fmtMass(farSideShipMass) }}</span>
+              </div>
+            </template>
+
+            <template v-else>
+              <div class="form-row">
+                <label class="form-label" for="far-custom-label">Label</label>
+                <input id="far-custom-label" class="form-input" type="text"
+                       placeholder="e.g. Tengu" v-model="farSideForm.customLabel">
+              </div>
+              <div class="form-row">
+                <label class="form-label" for="far-custom-mass">Mass ({{ massUnit }})</label>
+                <input id="far-custom-mass" class="form-input" type="number" min="0"
+                       :step="unitStep" :placeholder="massUnit === 't' ? '0.000' : '0'"
+                       v-model.number="farSideCustomMassInput">
+              </div>
+            </template>
+
+            <button class="btn btn-primary btn-sm" :disabled="!canSubmitFarSide" @click="addFarSideShip">
+              Add Far Side Ship
+            </button>
+          </div>
+
+          <!-- List -->
+          <div v-if="farSideShips.length === 0" class="empty-state" style="padding:12px 0;font-size:0.85rem">
+            No far side ships defined.
+          </div>
+          <table v-else class="ship-table" aria-label="Far side ships">
+            <thead>
+              <tr>
+                <th scope="col">Ship / Label</th>
+                <th scope="col">Mass</th>
+                <th scope="col"><span class="visually-hidden">Remove</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="f in farSideShips" :key="f.id">
+                <td class="ship-name">{{ f.label }}</td>
+                <td class="mass-value">{{ fmtMass(f.mass) }}</td>
+                <td class="ship-actions">
+                  <button @click="removeFarSideShip(f.id)" class="btn btn-danger btn-xs">✕</button>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td><strong>Total reserved</strong></td>
+                <td class="mass-value"><strong>{{ fmtMass(farSideMass) }}</strong></td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </section>
+
       </div><!-- /.setup-tab-content -->
     </div>
 
@@ -514,95 +607,126 @@
             <span class="calc-spinner-label">Calculating optimal plan…</span>
           </div>
 
-          <div v-else-if="worstCasePlan" class="plans-grid">
+          <template v-else-if="worstCasePlan">
 
-            <!-- Best Case Plan (0% variance — fewest passes) -->
-            <div class="plan-card">
-              <div class="plan-card-header">
-                <div class="plan-card-title">Best Case</div>
-                <div class="plan-card-subtitle">0% variance — wormhole is exactly as described, must exceed {{ fmtMass(wormhole.totalMass) }}</div>
+            <!-- Far Side Return Passes notice -->
+            <div v-if="farSideShips.length" class="far-side-calc-notice">
+              <div class="far-side-calc-header">
+                <span>⬅ Far Side Return Passes</span>
+                <span class="far-side-calc-total">{{ fmtMass(farSideMass) }} reserved</span>
               </div>
-              <div v-if="bestCasePlan.alreadyCollapsed" class="plan-alert is-collapsed">
-                ✓ Wormhole has already collapsed (based on recorded passes).
+              <div v-if="farSideOverCollapses" class="plan-alert" style="margin-top:8px">
+                ⚠ Far side ships exceed the wormhole's maximum mass ({{ fmtMass(massToColMax) }}).
+                The wormhole may collapse before all ships make it through!
               </div>
-              <div v-else-if="bestCasePlan.impossible" class="plan-alert">
-                {{ bestCasePlan.msg }}
+              <div v-else-if="farSideAloneCollapses" class="plan-alert is-collapsed" style="margin-top:8px">
+                ✓ Far side ships returning will collapse the wormhole on their own — no additional rolling passes needed.
               </div>
-              <div v-else-if="bestCasePlan.tooMany" class="plan-alert">
-                ⚠ Too many passes required ({{ bestCasePlan.passCount }}+). Use a heavier ship.
-              </div>
-              <div v-else>
-                <div class="plan-passes-list" role="list">
-                  <div
-                    v-for="(pass, i) in bestCasePlan.passes"
-                    :key="i"
-                    class="plan-pass-item"
-                    role="listitem"
-                  >
-                    <span class="plan-pass-n">{{ i + 1 }}</span>
-                    <span class="plan-pass-label">{{ pass.label }}</span>
-                    <span class="plan-pass-mass">{{ fmtMass(pass.mass) }}</span>
-                    <span class="plan-pass-running">{{ fmtMass(pass.running) }}</span>
-                  </div>
-                </div>
-                <div class="plan-footer">
-                  <span class="plan-footer-stat">
-                    Passes: <strong>{{ bestCasePlan.passes.length }}</strong>
-                  </span>
-                  <span class="plan-footer-stat">
-                    Total: <strong>{{ fmtMass(bestCasePlan.totalMass) }}</strong>
-                  </span>
-                  <span class="plan-footer-stat">
-                    Needed: <strong>{{ fmtMass(massToColMin) }}</strong>
-                  </span>
+              <div class="far-side-calc-list">
+                <div v-for="f in farSideShips" :key="f.id" class="far-side-calc-item">
+                  <span class="far-side-calc-label">{{ f.label }}</span>
+                  <span class="far-side-calc-mass">{{ fmtMass(f.mass) }}</span>
                 </div>
               </div>
             </div>
 
-            <!-- Worst Case Plan (10% variance — most passes) -->
-            <div class="plan-card">
-              <div class="plan-card-header">
-                <div class="plan-card-title">Worst Case</div>
-                <div class="plan-card-subtitle">10% variance — wormhole has 10% more mass than described, must exceed {{ fmtMass(wormhole.totalMass * 1.1) }}</div>
-              </div>
-              <div v-if="worstCasePlan.alreadyCollapsed" class="plan-alert is-collapsed">
-                ✓ Wormhole has definitely collapsed (exceeded max possible mass).
-              </div>
-              <div v-else-if="worstCasePlan.impossible" class="plan-alert">
-                {{ worstCasePlan.msg }}
-              </div>
-              <div v-else-if="worstCasePlan.tooMany" class="plan-alert">
-                ⚠ Too many passes required ({{ worstCasePlan.passCount }}+). Use a heavier ship.
-              </div>
-              <div v-else>
-                <div class="plan-passes-list" role="list">
-                  <div
-                    v-for="(pass, i) in worstCasePlan.passes"
-                    :key="i"
-                    class="plan-pass-item"
-                    role="listitem"
-                  >
-                    <span class="plan-pass-n">{{ i + 1 }}</span>
-                    <span class="plan-pass-label">{{ pass.label }}</span>
-                    <span class="plan-pass-mass">{{ fmtMass(pass.mass) }}</span>
-                    <span class="plan-pass-running">{{ fmtMass(pass.running) }}</span>
+            <div v-if="!farSideAloneCollapses && !farSideOverCollapses" class="plans-grid">
+
+              <!-- Best Case Plan (0% variance — fewest passes) -->
+              <div class="plan-card">
+                <div class="plan-card-header">
+                  <div class="plan-card-title">Best Case</div>
+                  <div class="plan-card-subtitle">0% variance — wormhole is exactly as described, must exceed {{ fmtMass(wormhole.totalMass) }}</div>
+                </div>
+                <div v-if="bestCasePlan.alreadyCollapsed" class="plan-alert is-collapsed">
+                  ✓ Recorded passes{{ farSideShips.length ? ' + far side returns' : '' }} will collapse the wormhole.
+                </div>
+                <div v-else-if="bestCasePlan.impossible" class="plan-alert">
+                  {{ bestCasePlan.msg }}
+                </div>
+                <div v-else-if="bestCasePlan.tooMany" class="plan-alert">
+                  ⚠ Too many passes required ({{ bestCasePlan.passCount }}+). Use a heavier ship.
+                </div>
+                <div v-else>
+                  <div class="plan-passes-list" role="list">
+                    <div
+                      v-for="(pass, i) in bestCasePlan.passes"
+                      :key="i"
+                      class="plan-pass-item"
+                      role="listitem"
+                    >
+                      <span class="plan-pass-n">{{ i + 1 }}</span>
+                      <span class="plan-pass-label">{{ pass.label }}</span>
+                      <span class="plan-pass-mass">{{ fmtMass(pass.mass) }}</span>
+                      <span class="plan-pass-running">{{ fmtMass(pass.running) }}</span>
+                    </div>
+                  </div>
+                  <div class="plan-footer">
+                    <span class="plan-footer-stat">
+                      Passes: <strong>{{ bestCasePlan.passes.length }}</strong>
+                    </span>
+                    <span class="plan-footer-stat">
+                      Rolling: <strong>{{ fmtMass(bestCasePlan.totalMass) }}</strong>
+                    </span>
+                    <span v-if="farSideShips.length" class="plan-footer-stat">
+                      Far side: <strong>{{ fmtMass(farSideMass) }}</strong>
+                    </span>
+                    <span class="plan-footer-stat">
+                      Needed: <strong>{{ fmtMass(massToColMin) }}</strong>
+                    </span>
                   </div>
                 </div>
-                <div class="plan-footer">
-                  <span class="plan-footer-stat">
-                    Passes: <strong>{{ worstCasePlan.passes.length }}</strong>
-                  </span>
-                  <span class="plan-footer-stat">
-                    Total: <strong>{{ fmtMass(worstCasePlan.totalMass) }}</strong>
-                  </span>
-                  <span class="plan-footer-stat">
-                    Needed: <strong>{{ fmtMass(massToColMax) }}</strong>
-                  </span>
+              </div>
+
+              <!-- Worst Case Plan (10% variance — most passes) -->
+              <div class="plan-card">
+                <div class="plan-card-header">
+                  <div class="plan-card-title">Worst Case</div>
+                  <div class="plan-card-subtitle">10% variance — wormhole has 10% more mass than described, must exceed {{ fmtMass(wormhole.totalMass * 1.1) }}</div>
+                </div>
+                <div v-if="worstCasePlan.alreadyCollapsed" class="plan-alert is-collapsed">
+                  ✓ Recorded passes{{ farSideShips.length ? ' + far side returns' : '' }} will definitely collapse the wormhole.
+                </div>
+                <div v-else-if="worstCasePlan.impossible" class="plan-alert">
+                  {{ worstCasePlan.msg }}
+                </div>
+                <div v-else-if="worstCasePlan.tooMany" class="plan-alert">
+                  ⚠ Too many passes required ({{ worstCasePlan.passCount }}+). Use a heavier ship.
+                </div>
+                <div v-else>
+                  <div class="plan-passes-list" role="list">
+                    <div
+                      v-for="(pass, i) in worstCasePlan.passes"
+                      :key="i"
+                      class="plan-pass-item"
+                      role="listitem"
+                    >
+                      <span class="plan-pass-n">{{ i + 1 }}</span>
+                      <span class="plan-pass-label">{{ pass.label }}</span>
+                      <span class="plan-pass-mass">{{ fmtMass(pass.mass) }}</span>
+                      <span class="plan-pass-running">{{ fmtMass(pass.running) }}</span>
+                    </div>
+                  </div>
+                  <div class="plan-footer">
+                    <span class="plan-footer-stat">
+                      Passes: <strong>{{ worstCasePlan.passes.length }}</strong>
+                    </span>
+                    <span class="plan-footer-stat">
+                      Rolling: <strong>{{ fmtMass(worstCasePlan.totalMass) }}</strong>
+                    </span>
+                    <span v-if="farSideShips.length" class="plan-footer-stat">
+                      Far side: <strong>{{ fmtMass(farSideMass) }}</strong>
+                    </span>
+                    <span class="plan-footer-stat">
+                      Needed: <strong>{{ fmtMass(massToColMax) }}</strong>
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-          </div><!-- /.plans-grid -->
+            </div><!-- /.plans-grid -->
+
+          </template>
         </div>
       </section>
     </div>

@@ -1271,3 +1271,53 @@ body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
 .app-footer a:hover {
   text-decoration: underline;
 }
+
+/* ── Far Side Ships (Calculator notice) ───────────────────── */
+.far-side-calc-notice {
+  padding: 10px 14px;
+  background: rgba(121, 85, 72, 0.12);
+  border: 1px solid #8d6e63;
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  font-size: 0.82rem;
+}
+
+.far-side-calc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.far-side-calc-total {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.far-side-calc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.far-side-calc-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.far-side-calc-label { color: var(--color-text-primary); }
+.far-side-calc-mass  { color: var(--color-text-muted); font-family: monospace; }
+
+/* ── Form hint (read-only display value in form rows) ─────── */
+.form-hint {
+  font-family: monospace;
+  color: var(--color-text-muted);
+  padding: 4px 0;
+  font-size: 0.9rem;
+}
