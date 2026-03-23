@@ -46,19 +46,18 @@ function buildPlan(options, target) {
   if (!options || !options.length) return { impossible: true, passes: [], totalMass: 0, msg: 'No eligible ships for this wormhole size.' };
   const sorted   = options.slice().sort((a, b) => b.mass - a.mass);
   const heaviest = sorted[0];
-  const lightest = sorted[sorted.length - 1];
   if (heaviest.mass <= 0) return { impossible: true, passes: [], totalMass: 0, msg: 'All ships have zero mass.' };
   let cumulative = 0;
   const plan = [];
   while (cumulative < target) {
-    plan.push(Object.assign({}, heaviest));
-    cumulative += heaviest.mass;
-    if (plan.length > MAX_PLAN_PASSES + 1) {
-      if (plan.length % 2 !== 0) { plan.push(Object.assign({}, lightest)); cumulative += lightest.mass; }
+    // Add a full round trip (2 passes) of the heaviest ship so the plan is
+    // always even — no ship is left stranded on the wrong side
+    plan.push(Object.assign({}, heaviest)); cumulative += heaviest.mass;
+    plan.push(Object.assign({}, heaviest)); cumulative += heaviest.mass;
+    if (plan.length > MAX_PLAN_PASSES) {
       return { tooMany: true, passCount: plan.length, totalMass: cumulative };
     }
   }
-  if (plan.length % 2 !== 0) { plan.push(Object.assign({}, lightest)); cumulative += lightest.mass; }
   let running = 0;
   return {
     passes: plan.map(function(p) { running += p.mass; return Object.assign({}, p, { running: running }); }),
