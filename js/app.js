@@ -397,6 +397,10 @@ createApp({
       if (confirm('Remove this ship from the fleet?')) ships.value = ships.value.filter(s => s.id !== id);
     }
 
+    function cloneShip(s) {
+      ships.value.push({ ...s, id: genId(), name: s.name + ' (copy)' });
+    }
+
     // ── YAML ─────────────────────────────────────────────────────────────────
     // YAML always stores masses in kg for portability, regardless of display unit
     function exportYAML() {
@@ -470,7 +474,7 @@ createApp({
       addPass, removePass, clearPasses, resetSession,
       addFarSideShip, removeFarSideShip,
       passLabel, threshClass,
-      openAddShip, openEditShip, closeShipModal, saveShip, deleteShip,
+      openAddShip, openEditShip, closeShipModal, saveShip, deleteShip, cloneShip,
       exportYAML, triggerImport, handleYAMLFile,
     };
   },
