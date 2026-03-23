@@ -861,6 +861,29 @@ input[type="number"] { -moz-appearance: textfield; }
   opacity: 0.85;
 }
 
+.plan-pass-item.is-far-side {
+  border-left-color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 8%, var(--color-bg-card));
+  opacity: 1;
+}
+
+.plan-pass-item.is-far-side .plan-pass-n {
+  color: var(--color-warning);
+  font-size: 0.75rem;
+}
+
+.plan-pass-item.is-final {
+  border-left-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-card));
+  opacity: 1;
+}
+
+.plan-collapse-icon {
+  margin-left: 5px;
+  color: var(--color-danger);
+  font-weight: 700;
+}
+
 .plan-pass-n {
   font-family: var(--font-mono);
   font-size: 0.68rem;

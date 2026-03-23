@@ -150,6 +150,13 @@
                 </option>
               </select>
             </label>
+            <label class="form-label">
+              Rolling Target
+              <select v-model="rollingTarget" class="form-input">
+                <option value="collapse">Collapse — exceed 100% mass (recommended)</option>
+                <option value="critical">Critical — exceed 90% mass, manual final roll</option>
+              </select>
+            </label>
             <button @click="resetSession" class="btn btn-danger btn-sm" style="align-self:flex-start;margin-top:4px">
               ↺ Reset Session
             </button>
@@ -610,62 +617,59 @@
           <template v-else-if="worstCasePlan">
 
             <!-- Far Side Return Passes notice -->
-            <div v-if="farSideShips.length" class="far-side-calc-notice">
+            <!-- Far Side over-collapse warning (ship list now shown inline in plan cards) -->
+            <div v-if="farSideShips.length && farSideOverCollapses" class="far-side-calc-notice">
               <div class="far-side-calc-header">
                 <span>⬅ Far Side Return Passes</span>
                 <span class="far-side-calc-total">{{ fmtMass(farSideMass) }} reserved</span>
               </div>
-              <div v-if="farSideOverCollapses" class="plan-alert" style="margin-top:8px">
+              <div class="plan-alert" style="margin-top:8px">
                 ⚠ Far side ships exceed the wormhole's maximum mass ({{ fmtMass(massToColMax) }}).
                 The wormhole may collapse before all ships make it through!
               </div>
-              <div v-else-if="farSideAloneCollapses" class="plan-alert is-collapsed" style="margin-top:8px">
-                ✓ Far side ships returning will collapse the wormhole on their own — no additional rolling passes needed.
-              </div>
-              <div class="far-side-calc-list">
-                <div v-for="f in farSideShips" :key="f.id" class="far-side-calc-item">
-                  <span class="far-side-calc-label">{{ f.label }}</span>
-                  <span class="far-side-calc-mass">{{ fmtMass(f.mass) }}</span>
-                </div>
-              </div>
             </div>
 
-            <div v-if="!farSideAloneCollapses && !farSideOverCollapses" class="plans-grid">
+            <div v-if="!farSideOverCollapses" class="plans-grid">
 
               <!-- Best Case Plan (0% variance — fewest passes) -->
               <div class="plan-card">
                 <div class="plan-card-header">
                   <div class="plan-card-title">Best Case</div>
-                  <div class="plan-card-subtitle">0% variance — wormhole is exactly as described, must exceed {{ fmtMass(wormhole.totalMass) }}</div>
+                  <div class="plan-card-subtitle" v-if="rollingTarget === 'critical'">
+                    0% variance — wormhole is exactly as described, must reach critical (exceed {{ fmtMass(wormhole.totalMass * 0.9) }})
+                  </div>
+                  <div class="plan-card-subtitle" v-else>
+                    0% variance — wormhole is exactly as described, must exceed {{ fmtMass(wormhole.totalMass) }}
+                  </div>
                 </div>
-                <div v-if="bestCasePlan.alreadyCollapsed" class="plan-alert is-collapsed">
-                  ✓ Recorded passes{{ farSideShips.length ? ' + far side returns' : '' }} will collapse the wormhole.
-                </div>
-                <div v-else-if="bestCasePlan.impossible" class="plan-alert">
+                <div v-if="bestCasePlan.impossible" class="plan-alert">
                   {{ bestCasePlan.msg }}
                 </div>
                 <div v-else-if="bestCasePlan.tooMany" class="plan-alert">
                   ⚠ Too many passes required ({{ bestCasePlan.passCount }}+). Use a heavier ship.
                 </div>
-                <div v-else>
-                  <div class="plan-passes-list" role="list">
+                <template v-else>
+                  <div v-if="bestCasePlan.alreadyCollapsed" class="plan-alert is-collapsed">
+                    ✓ Recorded passes{{ farSideShips.length ? ' + far side returns' : '' }} will collapse the wormhole.
+                  </div>
+                  <div v-if="displayBestCase.length" class="plan-passes-list" role="list">
                     <div
-                      v-for="(pass, i) in bestCasePlan.passes"
+                      v-for="(row, i) in displayBestCase"
                       :key="i"
-                      class="plan-pass-item"
+                      :class="['plan-pass-item', { 'is-far-side': row.rowType === 'far-side', 'is-final': row.isFinal }]"
                       role="listitem"
                     >
-                      <span class="plan-pass-n">{{ i + 1 }}</span>
-                      <span class="plan-pass-label">{{ pass.label }}</span>
-                      <span class="plan-pass-mass">{{ fmtMass(pass.mass) }}</span>
-                      <span class="plan-pass-running">{{ fmtMass(pass.running) }}</span>
+                      <span class="plan-pass-n">{{ row.rowType === 'far-side' ? '⬅' : (i + 1) }}</span>
+                      <span class="plan-pass-label">
+                        {{ row.label }}
+                        <span v-if="row.isFinal" class="plan-collapse-icon" :title="rollingTarget === 'critical' ? 'Wormhole enters critical state' : 'Wormhole collapses'">⊗</span>
+                      </span>
+                      <span class="plan-pass-mass">{{ fmtMass(row.mass) }}</span>
+                      <span class="plan-pass-running">{{ fmtMass(row.running) }}</span>
                     </div>
                   </div>
-                  <div class="plan-footer">
-                    <span class="plan-footer-stat">
-                      Passes: <strong>{{ bestCasePlan.passes.length }}</strong>
-                    </span>
-                    <span class="plan-footer-stat">
+                  <div v-if="!bestCasePlan.alreadyCollapsed && displayBestCase.length" class="plan-footer">
+                    <span v-if="bestCasePlan.passes.length" class="plan-footer-stat">
                       Rolling: <strong>{{ fmtMass(bestCasePlan.totalMass) }}</strong>
                     </span>
                     <span v-if="farSideShips.length" class="plan-footer-stat">
@@ -675,43 +679,48 @@
                       Needed: <strong>{{ fmtMass(massToColMin) }}</strong>
                     </span>
                   </div>
-                </div>
+                </template>
               </div>
 
               <!-- Worst Case Plan (10% variance — most passes) -->
               <div class="plan-card">
                 <div class="plan-card-header">
                   <div class="plan-card-title">Worst Case</div>
-                  <div class="plan-card-subtitle">10% variance — wormhole has 10% more mass than described, must exceed {{ fmtMass(wormhole.totalMass * 1.1) }}</div>
+                  <div class="plan-card-subtitle" v-if="rollingTarget === 'critical'">
+                    10% variance — wormhole has 10% more mass than described, must reach critical (exceed {{ fmtMass(wormhole.totalMass) }})
+                  </div>
+                  <div class="plan-card-subtitle" v-else>
+                    10% variance — wormhole has 10% more mass than described, must exceed {{ fmtMass(wormhole.totalMass * 1.1) }}
+                  </div>
                 </div>
-                <div v-if="worstCasePlan.alreadyCollapsed" class="plan-alert is-collapsed">
-                  ✓ Recorded passes{{ farSideShips.length ? ' + far side returns' : '' }} will definitely collapse the wormhole.
-                </div>
-                <div v-else-if="worstCasePlan.impossible" class="plan-alert">
+                <div v-if="worstCasePlan.impossible" class="plan-alert">
                   {{ worstCasePlan.msg }}
                 </div>
                 <div v-else-if="worstCasePlan.tooMany" class="plan-alert">
                   ⚠ Too many passes required ({{ worstCasePlan.passCount }}+). Use a heavier ship.
                 </div>
-                <div v-else>
-                  <div class="plan-passes-list" role="list">
+                <template v-else>
+                  <div v-if="worstCasePlan.alreadyCollapsed" class="plan-alert is-collapsed">
+                    ✓ Recorded passes{{ farSideShips.length ? ' + far side returns' : '' }} will definitely collapse the wormhole.
+                  </div>
+                  <div v-if="displayWorstCase.length" class="plan-passes-list" role="list">
                     <div
-                      v-for="(pass, i) in worstCasePlan.passes"
+                      v-for="(row, i) in displayWorstCase"
                       :key="i"
-                      class="plan-pass-item"
+                      :class="['plan-pass-item', { 'is-far-side': row.rowType === 'far-side', 'is-final': row.isFinal }]"
                       role="listitem"
                     >
-                      <span class="plan-pass-n">{{ i + 1 }}</span>
-                      <span class="plan-pass-label">{{ pass.label }}</span>
-                      <span class="plan-pass-mass">{{ fmtMass(pass.mass) }}</span>
-                      <span class="plan-pass-running">{{ fmtMass(pass.running) }}</span>
+                      <span class="plan-pass-n">{{ row.rowType === 'far-side' ? '⬅' : (i + 1) }}</span>
+                      <span class="plan-pass-label">
+                        {{ row.label }}
+                        <span v-if="row.isFinal" class="plan-collapse-icon" :title="rollingTarget === 'critical' ? 'Wormhole enters critical state' : 'Wormhole collapses'">⊗</span>
+                      </span>
+                      <span class="plan-pass-mass">{{ fmtMass(row.mass) }}</span>
+                      <span class="plan-pass-running">{{ fmtMass(row.running) }}</span>
                     </div>
                   </div>
-                  <div class="plan-footer">
-                    <span class="plan-footer-stat">
-                      Passes: <strong>{{ worstCasePlan.passes.length }}</strong>
-                    </span>
-                    <span class="plan-footer-stat">
+                  <div v-if="!worstCasePlan.alreadyCollapsed && displayWorstCase.length" class="plan-footer">
+                    <span v-if="worstCasePlan.passes.length" class="plan-footer-stat">
                       Rolling: <strong>{{ fmtMass(worstCasePlan.totalMass) }}</strong>
                     </span>
                     <span v-if="farSideShips.length" class="plan-footer-stat">
@@ -721,7 +730,7 @@
                       Needed: <strong>{{ fmtMass(massToColMax) }}</strong>
                     </span>
                   </div>
-                </div>
+                </template>
               </div>
 
             </div><!-- /.plans-grid -->

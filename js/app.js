@@ -8,7 +8,8 @@ const STORAGE_THEME    = 'eve-whr-theme-v1';
 const STORAGE_WH       = 'eve-whr-wormhole-v1';
 const STORAGE_UNIT     = 'eve-whr-unit-v1';
 const STORAGE_PASSES   = 'eve-whr-passes-v1';
-const STORAGE_FAR_SIDE = 'eve-whr-far-side-v1';
+const STORAGE_FAR_SIDE        = 'eve-whr-far-side-v1';
+const STORAGE_ROLLING_TARGET  = 'eve-whr-rolling-target-v1';
 
 // Individual ship mass limits per wormhole size (stored internally in kg)
 const WH_SIZES = [
@@ -97,6 +98,7 @@ createApp({
     const ships      = ref(JSON.parse(localStorage.getItem(STORAGE_SHIPS)    || '[]'));
     const passes     = ref(JSON.parse(localStorage.getItem(STORAGE_PASSES)   || '[]'));
     const farSideShips = ref(JSON.parse(localStorage.getItem(STORAGE_FAR_SIDE) || '[]'));
+    const rollingTarget = ref(localStorage.getItem(STORAGE_ROLLING_TARGET) || 'collapse'); // 'collapse' | 'critical'
 
     const passForm = reactive({
       mode:       'ship',  // 'ship' | 'custom'
@@ -127,6 +129,7 @@ createApp({
     watch(farSideShips,val => localStorage.setItem(STORAGE_FAR_SIDE, JSON.stringify(val)), { deep: true });
     watch(wormhole, val => localStorage.setItem(STORAGE_WH,    JSON.stringify({ ...val })), { deep: true });
     watch(massUnit, val => localStorage.setItem(STORAGE_UNIT, val));
+    watch(rollingTarget, val => localStorage.setItem(STORAGE_ROLLING_TARGET, val));
 
     // ── Theme ────────────────────────────────────────────────────────────────
     function applyTheme() {
@@ -172,8 +175,8 @@ createApp({
 
     const massToReduced  = computed(() => Math.max(0, wormhole.totalMass * 0.5 - usedMass.value));
     const massToCritical = computed(() => Math.max(0, wormhole.totalMass * 0.9 - usedMass.value));
-    const massToColMin   = computed(() => Math.max(0, wormhole.totalMass * 1.0 - usedMass.value));
-    const massToColMax   = computed(() => Math.max(0, wormhole.totalMass * 1.1 - usedMass.value));
+    const massToColMin   = computed(() => Math.max(0, wormhole.totalMass * (rollingTarget.value === 'critical' ? 0.9 : 1.0) - usedMass.value));
+    const massToColMax   = computed(() => Math.max(0, wormhole.totalMass * (rollingTarget.value === 'critical' ? 1.0 : 1.1) - usedMass.value));
 
     // ── Far Side Ships ───────────────────────────────────────────────────────
     const farSideMass = computed(() => farSideShips.value.reduce((s, f) => s + f.mass, 0));
@@ -432,6 +435,22 @@ createApp({
 
     function threshClass(val) { return val <= 0 ? 'text-success' : ''; }
 
+    // ── Display Plans (rolling passes + far-side return rows merged) ──────────
+    function buildDisplayPlan(plan) {
+      if (!plan || plan.impossible || plan.tooMany) return [];
+      const rollingRows = (plan.passes || []).map(p => ({ ...p, rowType: 'rolling' }));
+      let running = plan.totalMass || 0;
+      const farRows = farSideShips.value.map(f => {
+        running += f.mass;
+        return { rowType: 'far-side', label: f.label, mass: f.mass, running };
+      });
+      const allRows = [...rollingRows, ...farRows];
+      if (allRows.length > 0) allRows[allRows.length - 1] = { ...allRows[allRows.length - 1], isFinal: true };
+      return allRows;
+    }
+    const displayBestCase  = computed(() => buildDisplayPlan(bestCasePlan.value));
+    const displayWorstCase = computed(() => buildDisplayPlan(worstCasePlan.value));
+
     // ── Expose to template ───────────────────────────────────────────────────
     return {
       activeTab, selectedTheme, massUnit, wormhole, ships, passes, passForm, shipModal, yamlFileRef,
@@ -441,6 +460,7 @@ createApp({
       farSideShips, farSideForm, farSideMass, farSideSelectedShip, farSideShipMass,
       canSubmitFarSide, farSideCustomMassInput, farSideAloneCollapses, farSideOverCollapses,
       effectiveMassToColMin, effectiveMassToColMax,
+      rollingTarget, displayBestCase, displayWorstCase,
       barFillStyle, barVarianceStyle, markerReducedLeft, markerCriticalLeft, markerTotalLeft,
       statusClass, selectedShip, shipPassMass, shipPassFits, canSubmitPass,
       passesReversed, passOptions, worstCasePlan, bestCasePlan, calcBusy,
