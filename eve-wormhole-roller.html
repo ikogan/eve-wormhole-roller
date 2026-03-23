@@ -420,50 +420,6 @@
   --shadow-glow:  0 0 14px var(--color-accent-glow);
 }
 
-/* ── Sisters of EVE ───────────────────────────────────────── */
-[data-theme="soe"] {
-  --color-bg-primary:    #0c0c18;
-  --color-bg-secondary:  #131325;
-  --color-bg-tertiary:   #1c1c32;
-  --color-bg-card:       #131325;
-  --color-bg-input:      #0a0a14;
-  --color-bg-modal:      #151528;
-  --color-bg-hover:      #252542;
-
-  --color-accent:        #99ccff;
-  --color-accent-dim:    #5588bb;
-  --color-accent-glow:   rgba(153, 204, 255, 0.16);
-  --color-accent-hot:    #f48fb1;
-  --color-accent-cold:   #b3e5fc;
-
-  --color-text-primary:  #eeeeff;
-  --color-text-secondary:#8888cc;
-  --color-text-muted:    #3c3c6a;
-
-  --color-border:        #252545;
-  --color-border-bright: #3a3a68;
-
-  --color-danger:        #ef5350;
-  --color-danger-dim:    #7f2320;
-  --color-warning:       #ffa726;
-  --color-success:       #66bb6a;
-
-  --color-status-stable:   #99ccff;
-  --color-status-reduced:  #ffa726;
-  --color-status-critical: #ef5350;
-  --color-status-collapsed:#9575cd;
-
-  --color-bar-fill-safe:   #7bafd4;
-  --color-bar-fill-mid:    #ffa726;
-  --color-bar-fill-danger: #ef5350;
-  --color-bar-variance:    rgba(153, 204, 255, 0.12);
-  --color-bar-track:       #0a0a16;
-
-  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.55);
-  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.85);
-  --shadow-glow:  0 0 12px var(--color-accent-glow);
-}
-
 /* ── ORE (Outer Ring Excavations) ─────────────────────────── */
 [data-theme="ore"] {
   --color-bg-primary:    #0d0d0d;
@@ -772,6 +728,50 @@
   --shadow-glow:  0 0 18px var(--color-accent-glow);
 }
 
+  --color-bg-primary:    #0c0c18;
+  --color-bg-secondary:  #131325;
+  --color-bg-tertiary:   #1c1c32;
+  --color-bg-card:       #131325;
+  --color-bg-input:      #0a0a14;
+  --color-bg-modal:      #151528;
+  --color-bg-hover:      #252542;
+
+  --color-accent:        #99ccff;
+  --color-accent-dim:    #5588bb;
+  --color-accent-glow:   rgba(153, 204, 255, 0.16);
+  --color-accent-hot:    #f48fb1;
+  --color-accent-cold:   #b3e5fc;
+
+  --color-text-primary:  #eeeeff;
+  --color-text-secondary:#8888cc;
+  --color-text-muted:    #3c3c6a;
+
+  --color-border:        #252545;
+  --color-border-bright: #3a3a68;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #99ccff;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #7bafd4;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(153, 204, 255, 0.12);
+  --color-bar-track:       #0a0a16;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.55);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.85);
+  --shadow-glow:  0 0 12px var(--color-accent-glow);
+}
+
+</style>
+  <style>
 /* ============================================================
    EVE Online Wormhole Roller — Main Stylesheet
    ============================================================ */
@@ -1941,6 +1941,9 @@ input[type="number"] { -moz-appearance: textfield; }
   text-align: center;
   font-size: 1rem;
   white-space: nowrap;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
 }
 
 .compat-ok      { color: var(--color-success); }
@@ -2003,7 +2006,47 @@ body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
     color var(--transition);
 }
 
-  </style>
+/* ── Cold-Only Ships Notice (calculator) ──────────────────── */
+.cold-only-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(41, 182, 246, 0.08);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  color: var(--color-accent);
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+/* ── App Footer ───────────────────────────────────────────── */
+.app-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.app-footer-label {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.app-footer a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.app-footer a:hover {
+  text-decoration: underline;
+}
+
+</style>
 </head>
 <body>
 <div id="app">
@@ -2191,7 +2234,7 @@ body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
                   <th scope="col">Ship</th>
                   <th scope="col">Cold Mass ({{ massUnit }})</th>
                   <th scope="col">Hot Mass ({{ massUnit }})</th>
-                  <th scope="col" title="Fits through configured wormhole size">Fits WH</th>
+                  <th scope="col" title="Fits through configured wormhole size — ❄ cold / ♨ hot">Fits WH</th>
                   <th scope="col"><span class="visually-hidden">Actions</span></th>
                 </tr>
               </thead>
@@ -2202,8 +2245,12 @@ body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
                   <td class="mass-value">{{ fmtMass(ship.hotMass) }}</td>
                   <td class="ship-compat">
                     <span v-if="!whSizeLimit" class="compat-unknown" title="No wormhole size set">—</span>
-                    <span v-else-if="massFits(ship.coldMass) || massFits(ship.hotMass)" class="compat-ok" title="At least one pass type fits">✓</span>
-                    <span v-else class="compat-no" title="Too heavy for this wormhole">✗</span>
+                    <template v-else>
+                      <span :class="massFits(ship.coldMass) ? 'compat-ok' : 'compat-no'"
+                            :title="massFits(ship.coldMass) ? 'Cold pass fits' : 'Cold mass too heavy'">❄</span>
+                      <span :class="massFits(ship.hotMass) ? 'compat-ok' : 'compat-no'"
+                            :title="massFits(ship.hotMass) ? 'Hot pass fits' : 'Hot mass too heavy'">♨</span>
+                    </template>
                   </td>
                   <td class="ship-actions">
                     <button @click="openEditShip(ship)" class="btn btn-secondary btn-xs">Edit</button>
@@ -2345,7 +2392,7 @@ body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
                       :class="{ 'active-hot': passForm.passType === 'hot' }"
                       @click="passForm.passType = 'hot'"
                       :aria-pressed="passForm.passType === 'hot'"
-                    >🔥 Hot</button>
+                    >♨ Hot</button>
                   </div>
                 </div>
               </div>
@@ -2368,7 +2415,7 @@ body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
               <div v-else-if="selectedShip && shipPassMass > 0" class="pass-mass-preview">
                 Pass mass: <strong>{{ fmtMass(shipPassMass) }}</strong>
                 <span class="text-muted" style="font-size:0.75rem;margin-left:8px">
-                  ({{ passForm.passType === 'hot' ? '🔥 MWD active' : '❄ MWD off' }})
+                  ({{ passForm.passType === 'hot' ? '♨ MWD active' : '❄ MWD off' }})
                 </span>
               </div>
             </div>
@@ -2490,6 +2537,14 @@ body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
               <strong>{{ excludedShips.length }} ship{{ excludedShips.length > 1 ? 's' : '' }}</strong>
               excluded from plans (too heavy for {{ whSizeInfo?.label ?? 'selected' }} wormhole):
               <em>{{ excludedShips.map(s => s.name).join(', ') }}</em>
+            </span>
+          </div>
+          <div v-if="coldOnlyShips.length" class="cold-only-notice" role="status">
+            <span class="excluded-icon">❄</span>
+            <span>
+              <strong>{{ coldOnlyShips.length }} ship{{ coldOnlyShips.length > 1 ? 's' : '' }}</strong>
+              can only pass <strong>cold</strong> through this wormhole (hot mass too heavy):
+              <em>{{ coldOnlyShips.map(s => s.name).join(', ') }}</em>
             </span>
           </div>
 
@@ -2657,6 +2712,12 @@ body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
     </div>
   </div>
 
+<footer class="app-footer">
+  <span class="app-footer-label">Useful Links:</span>
+  <a href="https://whtype.info" target="_blank" rel="noopener noreferrer">Wormhole Type Info</a>
+  <a href="https://anoik.is" target="_blank" rel="noopener noreferrer">Anoik's Wormhole Info</a>
+</footer>
+
 </div><!-- /#app -->
 
 <script>/**
@@ -2682,10 +2743,11 @@ body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
 const { createApp, ref, computed, watch, reactive } = Vue;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const STORAGE_SHIPS = 'eve-whr-ships-v1';
-const STORAGE_THEME = 'eve-whr-theme-v1';
-const STORAGE_WH    = 'eve-whr-wormhole-v1';
-const STORAGE_UNIT  = 'eve-whr-unit-v1';
+const STORAGE_SHIPS  = 'eve-whr-ships-v1';
+const STORAGE_THEME  = 'eve-whr-theme-v1';
+const STORAGE_WH     = 'eve-whr-wormhole-v1';
+const STORAGE_UNIT   = 'eve-whr-unit-v1';
+const STORAGE_PASSES = 'eve-whr-passes-v1';
 
 // Individual ship mass limits per wormhole size (stored internally in kg)
 const WH_SIZES = [
@@ -2711,19 +2773,21 @@ function _fmt(n) {
 }
 
 // ─── Optimal Pass Calculator (Web Worker) ─────────────────────────────────────
-// buildPlan runs in a Web Worker so the main thread never blocks.
-// Blob URL keeps this single-file and compatible with file://.
+/**
+ * buildPlan logic lives inside the worker source string so it runs off the main
+ * thread. Using a Blob URL keeps the app single-file and compatible with file://.
+ */
 const CALC_WORKER_SRC = `
 var MAX_PLAN_PASSES = 100;
 function buildPlan(options, target) {
   if (target <= 0) return { alreadyCollapsed: true, passes: [], totalMass: 0 };
   if (!options || !options.length) return { impossible: true, passes: [], totalMass: 0, msg: 'No eligible ships for this wormhole size.' };
-  var sorted   = options.slice().sort(function(a, b) { return b.mass - a.mass; });
-  var heaviest = sorted[0];
-  var lightest = sorted[sorted.length - 1];
+  const sorted   = options.slice().sort((a, b) => b.mass - a.mass);
+  const heaviest = sorted[0];
+  const lightest = sorted[sorted.length - 1];
   if (heaviest.mass <= 0) return { impossible: true, passes: [], totalMass: 0, msg: 'All ships have zero mass.' };
-  var cumulative = 0;
-  var plan = [];
+  let cumulative = 0;
+  const plan = [];
   while (cumulative < target) {
     plan.push(Object.assign({}, heaviest));
     cumulative += heaviest.mass;
@@ -2733,7 +2797,7 @@ function buildPlan(options, target) {
     }
   }
   if (plan.length % 2 !== 0) { plan.push(Object.assign({}, lightest)); cumulative += lightest.mass; }
-  var running = 0;
+  let running = 0;
   return {
     passes: plan.map(function(p) { running += p.mass; return Object.assign({}, p, { running: running }); }),
     totalMass: cumulative
@@ -2747,6 +2811,8 @@ self.onmessage = function(e) {
   });
 };
 `;
+
+// Create a persistent worker from the blob (works on file:// and http://)
 const _calcWorkerBlob = new Blob([CALC_WORKER_SRC], { type: 'application/javascript' });
 const _calcWorkerUrl  = URL.createObjectURL(_calcWorkerBlob);
 const _calcWorker     = new Worker(_calcWorkerUrl);
@@ -2768,7 +2834,7 @@ createApp({
     });
 
     const ships  = ref(JSON.parse(localStorage.getItem(STORAGE_SHIPS) || '[]'));
-    const passes = ref([]); // session-only — intentionally not persisted
+    const passes = ref(JSON.parse(localStorage.getItem(STORAGE_PASSES) || '[]'));
 
     const passForm = reactive({
       mode:       'ship',  // 'ship' | 'custom'
@@ -2786,8 +2852,9 @@ createApp({
     const yamlFileRef = ref(null);
 
     // ── Persistence ──────────────────────────────────────────────────────────
-    watch(ships,    val => localStorage.setItem(STORAGE_SHIPS, JSON.stringify(val)), { deep: true });
-    watch(wormhole, val => localStorage.setItem(STORAGE_WH,   JSON.stringify({ ...val })), { deep: true });
+    watch(ships,    val => localStorage.setItem(STORAGE_SHIPS,  JSON.stringify(val)), { deep: true });
+    watch(passes,   val => localStorage.setItem(STORAGE_PASSES, JSON.stringify(val)), { deep: true });
+    watch(wormhole, val => localStorage.setItem(STORAGE_WH,    JSON.stringify({ ...val })), { deep: true });
     watch(massUnit, val => localStorage.setItem(STORAGE_UNIT, val));
 
     // ── Theme ────────────────────────────────────────────────────────────────
@@ -2876,7 +2943,7 @@ createApp({
     function passLabel(pass) {
       if (pass.mode === 'custom') return 'Custom Pass';
       const ship = ships.value.find(s => s.id === pass.shipId);
-      return `${ship?.name ?? 'Unknown'} (${pass.passType === 'hot' ? '🔥 Hot' : '❄ Cold'})`;
+      return `${ship?.name ?? 'Unknown'} (${pass.passType === 'hot' ? '♨ Hot' : '❄ Cold'})`;
     }
 
     // ── Calculator ───────────────────────────────────────────────────────────
@@ -2897,19 +2964,32 @@ createApp({
         : []
     );
 
+    // Ships that can pass cold but whose hot mass exceeds the size limit
+    const coldOnlyShips = computed(() =>
+      whSizeLimit.value
+        ? ships.value.filter(s =>
+            massFits(s.coldMass || 0) &&
+            (s.hotMass || 0) > 0 && !massFits(s.hotMass || 0)
+          )
+        : []
+    );
+
     const worstCasePlan = ref(null);
     const bestCasePlan  = ref(null);
     const calcBusy      = ref(false);
-    const calcDirty     = ref(true);
+    const calcDirty     = ref(true); // true = needs recalc on next tab visit
 
+    // Receive results back from the worker
     _calcWorker.onmessage = (e) => {
       worstCasePlan.value = e.data.worstCasePlan;
       bestCasePlan.value  = e.data.bestCasePlan;
       calcBusy.value = false;
     };
 
+    // Mark dirty whenever the inputs that affect the calc change
     watch([passOptions, massToColMin, massToColMax], () => { calcDirty.value = true; });
 
+    // Only calculate when the user navigates to the Calculator tab
     function triggerCalc() {
       if (!calcDirty.value) return;
       calcBusy.value      = true;
@@ -3029,7 +3109,7 @@ createApp({
     // ── Expose to template ───────────────────────────────────────────────────
     return {
       activeTab, selectedTheme, massUnit, wormhole, ships, passes, passForm, shipModal, yamlFileRef,
-      WH_SIZES, whSizeInfo, whSizeLimit, excludedShips,
+      WH_SIZES, whSizeInfo, whSizeLimit, excludedShips, coldOnlyShips,
       usedMass, usedPct,
       massToReduced, massToCritical, massToColMin, massToColMax,
       barFillStyle, barVarianceStyle, markerReducedLeft, markerCriticalLeft, markerTotalLeft,
