@@ -19,8 +19,13 @@ This regenerates `eve-wormhole-roller.html` for local testing. The file is gitig
 - Creating or pushing branches to GitHub
 - Creating or deleting releases or tags
 - Any `gh` CLI or API call that modifies GitHub (Pages config, repo settings, releases, etc.)
+- Creating, merging, or closing pull requests
 
-Local-only git operations (checkout, commit, add, stash, branch creation locally) are fine without asking.
+**Each approval covers exactly one specific operation.** Approval to push a branch does not imply approval to create a PR. Approval to create a PR does not imply approval to merge it. Always ask separately for each distinct GitHub action, every time.
+
+**Never assume urgency justifies skipping approval** — even for obvious regressions or fixes.
+
+Local-only git operations (checkout, commit, add, stash, local branch creation) are fine without asking.
 
 ## Branching
 
@@ -30,12 +35,11 @@ Local-only git operations (checkout, commit, add, stash, branch creation locally
 
 ## Project Architecture
 
-This is a **single-file static web app** (`index.html`). Key facts:
+This is a **static web app** served from `index.html`. Key facts:
 
-- **Runtime deliverable**: `index.html` — all CSS and JS are inlined; only Vue 3 and js-yaml load from CDN.
-- **Source files** (`css/`, `js/`) are kept for maintainability but are **not loaded at runtime**.
-- After editing source files, changes must be **manually synced into `index.html`** — there is no build step for local development.
-- The offline/release build (`eve-wormhole-roller.html`) is produced by `.github/scripts/build-offline.py`, which inlines CDN scripts. This runs in CI only.
+- **Runtime deliverable**: `index.html` — loads `css/themes.css`, `css/main.css`, and `js/app.js` as external files; Vue 3 and js-yaml load from CDN.
+- **Source files** (`css/`, `js/`) are the authoritative source and are loaded directly by `index.html`.
+- The offline/release build (`eve-wormhole-roller.html`) is produced by `build-local.sh` / `.github/scripts/build-offline.py`, which inlines all CSS, JS, and CDN scripts into a single file.
 
 ## Build Commands
 
