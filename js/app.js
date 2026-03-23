@@ -390,6 +390,11 @@ createApp({
       passes.value.push({ id: genId(), mode: 'state', newStatus: next, mass: 0 });
     }
 
+    function resetWhState() {
+      wormhole.status = 'stable';
+      passes.value.push({ id: genId(), mode: 'state', newStatus: 'stable', mass: 0 });
+    }
+
     function resetSession() {
       if (confirm('Reset everything? This will clear all passes, far side ships, and wormhole data.')) {
         passes.value = []; farSideShips.value = [];
@@ -647,7 +652,7 @@ createApp({
       shipModalValid, unitStep,
       whTotalMassInput, draftColdInput, draftHotInput, customMassInput,
       applyTheme, fmtMass, massFits,
-      addPass, removePass, clearPasses, resetSession, recordPlanPass, advanceWhState, nextWhState,
+      addPass, removePass, clearPasses, resetSession, recordPlanPass, advanceWhState, nextWhState, resetWhState,
       addFarSideShip, removeFarSideShip,
       passLabel, threshClass,
       openAddShip, openEditShip, closeShipModal, saveShip, deleteShip, cloneShip,
