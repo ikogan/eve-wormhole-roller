@@ -373,8 +373,10 @@
             <div class="mass-stats-grid">
               <div class="mass-stat">
                 <div class="mass-stat-label">Used</div>
-                <div class="mass-stat-value font-mono">{{ fmtMass(usedMass) }}</div>
-                <div class="mass-stat-pct">{{ usedPct.toFixed(1) }}%</div>
+                <div class="mass-stat-value font-mono">{{ fmtMass(effectiveUsedMass) }}</div>
+                <div class="mass-stat-pct">{{ usedPct.toFixed(1) }}%
+                  <span v-if="statusMinUsed > usedMass" class="text-muted" style="font-size:0.65rem"> (observed)</span>
+                </div>
               </div>
               <div class="mass-stat">
                 <div class="mass-stat-label">→ Reduced</div>

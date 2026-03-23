@@ -187,12 +187,27 @@ createApp({
 
     // ── Mass Computeds ───────────────────────────────────────────────────────
     const usedMass = computed(() => passes.value.reduce((s, p) => s + p.mass, 0));
-    const usedPct  = computed(() => wormhole.totalMass > 0 ? (usedMass.value / wormhole.totalMass) * 100 : 0);
 
-    const massToReduced  = computed(() => Math.max(0, wormhole.totalMass * 0.5 - usedMass.value));
-    const massToCritical = computed(() => Math.max(0, wormhole.totalMass * 0.9 - usedMass.value));
-    const massToColMin   = computed(() => Math.max(0, wormhole.totalMass * (rollingTarget.value === 'critical' ? 0.9 : 1.0) - usedMass.value));
-    const massToColMax   = computed(() => Math.max(0, wormhole.totalMass * (rollingTarget.value === 'critical' ? 1.0 : 1.1) - usedMass.value));
+    // When the user records an observed state change, treat at least that state's
+    // threshold as consumed — even if fewer actual passes have been recorded.
+    // This lets the calculator adjust when the WH state is already known.
+    const statusMinUsed = computed(() => {
+      switch (wormhole.status) {
+        case 'reduced':   return wormhole.totalMass * 0.50;
+        case 'critical':  return wormhole.totalMass * 0.90;
+        case 'collapsed': return wormhole.totalMass * 1.00;
+        default:          return 0;
+      }
+    });
+    // effectiveUsedMass: the higher of what we've physically recorded vs what the observed state implies
+    const effectiveUsedMass = computed(() => Math.max(usedMass.value, statusMinUsed.value));
+
+    const usedPct  = computed(() => wormhole.totalMass > 0 ? (effectiveUsedMass.value / wormhole.totalMass) * 100 : 0);
+
+    const massToReduced  = computed(() => Math.max(0, wormhole.totalMass * 0.5 - effectiveUsedMass.value));
+    const massToCritical = computed(() => Math.max(0, wormhole.totalMass * 0.9 - effectiveUsedMass.value));
+    const massToColMin   = computed(() => Math.max(0, wormhole.totalMass * (rollingTarget.value === 'critical' ? 0.9 : 1.0) - effectiveUsedMass.value));
+    const massToColMax   = computed(() => Math.max(0, wormhole.totalMass * (rollingTarget.value === 'critical' ? 1.0 : 1.1) - effectiveUsedMass.value));
 
     // ── Far Side Ships ───────────────────────────────────────────────────────
     const farSideMass = computed(() => farSideShips.value.reduce((s, f) => s + f.mass, 0));
@@ -475,7 +490,7 @@ createApp({
     function buildDisplayPlan(plan, planTarget) {
       if (!plan || plan.impossible || plan.tooMany) return [];
 
-      const base   = usedMass.value;       // mass already recorded this session
+      const base   = effectiveUsedMass.value; // recorded passes + state-implied minimum
       const total  = wormhole.totalMass;   // nominal 100% — used for state thresholds and %
       const target = planTarget ?? total;  // plan-specific target for remaining countdown
       const thresholds = [
@@ -607,7 +622,7 @@ createApp({
     return {
       activeTab, selectedTheme, massUnit, wormhole, ships, passes, passForm, shipModal, yamlFileRef,
       WH_SIZES, whSizeInfo, whSizeLimit, excludedShips, coldOnlyShips,
-      usedMass, usedPct,
+      usedMass, effectiveUsedMass, statusMinUsed, usedPct,
       massToReduced, massToCritical, massToColMin, massToColMax,
       farSideShips, farSideForm, farSideMass, farSideSelectedShip, farSideShipMass,
       canSubmitFarSide, farSideCustomMassInput, farSideAloneCollapses, farSideOverCollapses,
