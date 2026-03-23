@@ -855,6 +855,13 @@ input[type="number"] { -moz-appearance: textfield; }
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
   border-left: 2px solid var(--color-border-bright);
+  cursor: default;
+  user-select: none;
+  transition: background 0.1s;
+}
+
+.plan-pass-item:hover {
+  background: var(--color-bg-hover);
 }
 
 .plan-pass-item:nth-child(even) {
@@ -867,6 +874,10 @@ input[type="number"] { -moz-appearance: textfield; }
   opacity: 1;
 }
 
+.plan-pass-item.is-far-side:hover {
+  background: color-mix(in srgb, var(--color-warning) 16%, var(--color-bg-hover));
+}
+
 .plan-pass-item.is-far-side .plan-pass-n {
   color: var(--color-warning);
   font-size: 0.75rem;
@@ -876,6 +887,10 @@ input[type="number"] { -moz-appearance: textfield; }
   border-left-color: var(--color-danger);
   background: color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-card));
   opacity: 1;
+}
+
+.plan-pass-item.is-final:hover {
+  background: color-mix(in srgb, var(--color-danger) 16%, var(--color-bg-hover));
 }
 
 .plan-collapse-icon {
