@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # create releases and push to gh-pages
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build offline HTML
+        run: python3 .github/scripts/build-offline.py eve-wormhole-roller.html
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ github.run_number }}" \
+            --title "Release #${{ github.run_number }}" \
+            --notes "Single-file offline build. Download \`eve-wormhole-roller.html\` and open in any browser — no internet connection required." \
+            eve-wormhole-roller.html
+
+      - name: Prepare Pages deployment
+        run: |
+          mkdir -p _site
+          # CDN version at root (works on GitHub Pages with internet)
+          cp index.html _site/index.html
+          # Offline version also available from Pages
+          cp eve-wormhole-roller.html _site/eve-wormhole-roller.html
+
+      - name: Deploy to GitHub Pages (main → root)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: _site
+          keep_files: true   # preserve preview/ subdirectories
+          commit_message: "deploy: main → gh-pages root [skip ci]"

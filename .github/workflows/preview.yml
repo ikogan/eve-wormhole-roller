@@ -1,0 +1,41 @@
+name: Branch Preview
+
+on:
+  push:
+    branches: ['cs/**']
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # push to gh-pages
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build offline HTML
+        run: python3 .github/scripts/build-offline.py eve-wormhole-roller.html
+
+      - name: Resolve preview path
+        id: path
+        run: |
+          # cs/my-feature → preview/cs-my-feature
+          BRANCH="${{ github.ref_name }}"
+          SAFE="${BRANCH//\//-}"
+          echo "dir=preview/${SAFE}" >> "$GITHUB_OUTPUT"
+          echo "Branch '${BRANCH}' → preview path: preview/${SAFE}"
+
+      - name: Prepare preview site
+        run: |
+          mkdir -p _site
+          # Serve the offline build as index.html so the URL works directly
+          cp eve-wormhole-roller.html _site/index.html
+
+      - name: Deploy preview to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: _site
+          destination_dir: ${{ steps.path.outputs.dir }}
+          keep_files: true   # preserve root and other preview dirs
+          commit_message: "deploy: ${{ github.ref_name }} → ${{ steps.path.outputs.dir }} [skip ci]"

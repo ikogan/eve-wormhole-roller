@@ -412,8 +412,314 @@
   --shadow-glow:  0 0 14px var(--color-accent-glow);
 }
 
-/* ── Sisters of EVE ───────────────────────────────────────── */
-[data-theme="soe"] {
+/* ── ORE (Outer Ring Excavations) ─────────────────────────── */
+[data-theme="ore"] {
+  --color-bg-primary:    #0d0d0d;
+  --color-bg-secondary:  #161616;
+  --color-bg-tertiary:   #202020;
+  --color-bg-card:       #161616;
+  --color-bg-input:      #0a0a0a;
+  --color-bg-modal:      #181818;
+  --color-bg-hover:      #2a2a2a;
+
+  --color-accent:        #f5a623;
+  --color-accent-dim:    #b07010;
+  --color-accent-glow:   rgba(245, 166, 35, 0.2);
+  --color-accent-hot:    #ffcc80;
+  --color-accent-cold:   #ffe082;
+
+  --color-text-primary:  #f0e0c0;
+  --color-text-secondary:#b08040;
+  --color-text-muted:    #5a4018;
+
+  --color-border:        #2e2010;
+  --color-border-bright: #503818;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #f5a623;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #f5a623;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(245, 166, 35, 0.14);
+  --color-bar-track:       #0d0d0d;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.65);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.88);
+  --shadow-glow:  0 0 12px var(--color-accent-glow);
+}
+
+/* ── Mordu's Legion ───────────────────────────────────────── */
+[data-theme="mordus"] {
+  --color-bg-primary:    #050c14;
+  --color-bg-secondary:  #081220;
+  --color-bg-tertiary:   #0d1c30;
+  --color-bg-card:       #081220;
+  --color-bg-input:      #040a10;
+  --color-bg-modal:      #091420;
+  --color-bg-hover:      #122030;
+
+  --color-accent:        #00e5ff;
+  --color-accent-dim:    #0099bb;
+  --color-accent-glow:   rgba(0, 229, 255, 0.2);
+  --color-accent-hot:    #84ffff;
+  --color-accent-cold:   #e0f7fa;
+
+  --color-text-primary:  #c8eeff;
+  --color-text-secondary:#4ab0cc;
+  --color-text-muted:    #1a5070;
+
+  --color-border:        #0c2840;
+  --color-border-bright: #183e5c;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #00e5ff;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #00bcd4;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(0, 229, 255, 0.12);
+  --color-bar-track:       #050c14;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.85);
+  --shadow-glow:  0 0 16px var(--color-accent-glow);
+}
+
+/* ── Triglavian Collective ────────────────────────────────── */
+[data-theme="triglavian"] {
+  --color-bg-primary:    #140004;
+  --color-bg-secondary:  #1e0008;
+  --color-bg-tertiary:   #2c000e;
+  --color-bg-card:       #1e0008;
+  --color-bg-input:      #0e0003;
+  --color-bg-modal:      #210009;
+  --color-bg-hover:      #3a0015;
+
+  --color-accent:        #ff1744;
+  --color-accent-dim:    #b00030;
+  --color-accent-glow:   rgba(255, 23, 68, 0.22);
+  --color-accent-hot:    #ff6e40;
+  --color-accent-cold:   #ff80ab;
+
+  --color-text-primary:  #ffd0d8;
+  --color-text-secondary:#cc3355;
+  --color-text-muted:    #6e1428;
+
+  --color-border:        #3c0014;
+  --color-border-bright: #620028;
+
+  --color-danger:        #ff1744;
+  --color-danger-dim:    #7f0020;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #ff1744;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ff6e40;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #d50000;
+  --color-bar-fill-mid:    #ff6e40;
+  --color-bar-fill-danger: #ff1744;
+  --color-bar-variance:    rgba(255, 23, 68, 0.16);
+  --color-bar-track:       #110003;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.65);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.9);
+  --shadow-glow:  0 0 18px var(--color-accent-glow);
+}
+
+/* ── EDENCOM ──────────────────────────────────────────────── */
+[data-theme="edencom"] {
+  --color-bg-primary:    #070d16;
+  --color-bg-secondary:  #0c1525;
+  --color-bg-tertiary:   #121e34;
+  --color-bg-card:       #0c1525;
+  --color-bg-input:      #050a10;
+  --color-bg-modal:      #0e1828;
+  --color-bg-hover:      #1a2a40;
+
+  --color-accent:        #448aff;
+  --color-accent-dim:    #2255cc;
+  --color-accent-glow:   rgba(68, 138, 255, 0.2);
+  --color-accent-hot:    #82b1ff;
+  --color-accent-cold:   #b0bec5;
+
+  --color-text-primary:  #dce8ff;
+  --color-text-secondary:#6688cc;
+  --color-text-muted:    #2a4070;
+
+  --color-border:        #162040;
+  --color-border-bright: #243660;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #448aff;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #1e88e5;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(68, 138, 255, 0.14);
+  --color-bar-track:       #060c14;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.86);
+  --shadow-glow:  0 0 14px var(--color-accent-glow);
+}
+
+/* ── CONCORD ──────────────────────────────────────────────── */
+[data-theme="concord"] {
+  --color-bg-primary:    #080810;
+  --color-bg-secondary:  #10101e;
+  --color-bg-tertiary:   #18182c;
+  --color-bg-card:       #10101e;
+  --color-bg-input:      #060610;
+  --color-bg-modal:      #121222;
+  --color-bg-hover:      #222238;
+
+  --color-accent:        #ffd600;
+  --color-accent-dim:    #c09c00;
+  --color-accent-glow:   rgba(255, 214, 0, 0.2);
+  --color-accent-hot:    #ffeb3b;
+  --color-accent-cold:   #fff9c4;
+
+  --color-text-primary:  #f5f0d8;
+  --color-text-secondary:#c0a820;
+  --color-text-muted:    #6a5a10;
+
+  --color-border:        #28281a;
+  --color-border-bright: #404015;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #ffd600;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #f9a825;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(255, 214, 0, 0.14);
+  --color-bar-track:       #080810;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.65);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.88);
+  --shadow-glow:  0 0 14px var(--color-accent-glow);
+}
+
+/* ── Society of Conscious Thought ────────────────────────── */
+[data-theme="soct"] {
+  --color-bg-primary:    #0c0014;
+  --color-bg-secondary:  #120020;
+  --color-bg-tertiary:   #1a002e;
+  --color-bg-card:       #120020;
+  --color-bg-input:      #09000f;
+  --color-bg-modal:      #140022;
+  --color-bg-hover:      #240040;
+
+  --color-accent:        #aa44ff;
+  --color-accent-dim:    #7700cc;
+  --color-accent-glow:   rgba(170, 68, 255, 0.22);
+  --color-accent-hot:    #e040fb;
+  --color-accent-cold:   #ce93d8;
+
+  --color-text-primary:  #ecddf8;
+  --color-text-secondary:#9955cc;
+  --color-text-muted:    #4d1a80;
+
+  --color-border:        #26004a;
+  --color-border-bright: #400080;
+
+  --color-danger:        #ef5350;
+  --color-danger-dim:    #7f2320;
+  --color-warning:       #ffa726;
+  --color-success:       #66bb6a;
+
+  --color-status-stable:   #aa44ff;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ef5350;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #8e24aa;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ef5350;
+  --color-bar-variance:    rgba(170, 68, 255, 0.16);
+  --color-bar-track:       #0a0012;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.65);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.9);
+  --shadow-glow:  0 0 18px var(--color-accent-glow);
+}
+
+/* ── Deathless Circle ─────────────────────────────────────── */
+[data-theme="deathless"] {
+  --color-bg-primary:    #030a06;
+  --color-bg-secondary:  #07110a;
+  --color-bg-tertiary:   #0d1c10;
+  --color-bg-card:       #07110a;
+  --color-bg-input:      #020706;
+  --color-bg-modal:      #091410;
+  --color-bg-hover:      #122018;
+
+  --color-accent:        #00e676;
+  --color-accent-dim:    #007a3d;
+  --color-accent-glow:   rgba(0, 230, 118, 0.22);
+  --color-accent-hot:    #76ff03;
+  --color-accent-cold:   #69f0ae;
+
+  --color-text-primary:  #b8f0cc;
+  --color-text-secondary:#30a060;
+  --color-text-muted:    #0e4024;
+
+  --color-border:        #0e2816;
+  --color-border-bright: #1a4228;
+
+  --color-danger:        #ff1744;
+  --color-danger-dim:    #7f0020;
+  --color-warning:       #ffa726;
+  --color-success:       #00e676;
+
+  --color-status-stable:   #00e676;
+  --color-status-reduced:  #ffa726;
+  --color-status-critical: #ff1744;
+  --color-status-collapsed:#9575cd;
+
+  --color-bar-fill-safe:   #00c853;
+  --color-bar-fill-mid:    #ffa726;
+  --color-bar-fill-danger: #ff1744;
+  --color-bar-variance:    rgba(0, 230, 118, 0.16);
+  --color-bar-track:       #030a06;
+
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.7);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.92);
+  --shadow-glow:  0 0 18px var(--color-accent-glow);
+}
+
   --color-bg-primary:    #0c0c18;
   --color-bg-secondary:  #131325;
   --color-bg-tertiary:   #1c1c32;
