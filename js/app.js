@@ -8,7 +8,8 @@ const STORAGE_THEME    = 'eve-whr-theme-v1';
 const STORAGE_WH       = 'eve-whr-wormhole-v1';
 const STORAGE_UNIT     = 'eve-whr-unit-v1';
 const STORAGE_PASSES   = 'eve-whr-passes-v1';
-const STORAGE_FAR_SIDE = 'eve-whr-far-side-v1';
+const STORAGE_FAR_SIDE        = 'eve-whr-far-side-v1';
+const STORAGE_ROLLING_TARGET  = 'eve-whr-rolling-target-v1';
 
 // Individual ship mass limits per wormhole size (stored internally in kg)
 const WH_SIZES = [
@@ -43,32 +44,51 @@ var MAX_PLAN_PASSES = 100;
 function buildPlan(options, target) {
   if (target <= 0) return { alreadyCollapsed: true, passes: [], totalMass: 0 };
   if (!options || !options.length) return { impossible: true, passes: [], totalMass: 0, msg: 'No eligible ships for this wormhole size.' };
-  const sorted   = options.slice().sort((a, b) => b.mass - a.mass);
-  const heaviest = sorted[0];
-  const lightest = sorted[sorted.length - 1];
+
+  // Sort heaviest-first; this is the order used for the bulk passes
+  var sorted = options.slice().sort(function(a, b) { return b.mass - a.mass; });
+  var heaviest = sorted[0];
   if (heaviest.mass <= 0) return { impossible: true, passes: [], totalMass: 0, msg: 'All ships have zero mass.' };
-  let cumulative = 0;
-  const plan = [];
-  while (cumulative < target) {
+
+  // Minimum number of passes provably achievable (lower bound via heaviest ship)
+  var n = Math.ceil(target / heaviest.mass);
+  if (n > MAX_PLAN_PASSES) return { tooMany: true, passCount: n, totalMass: 0 };
+
+  // Fill the first n-1 passes with the heaviest ship to maximise accumulated mass
+  // and therefore minimise what the final pass needs to contribute.
+  var plan = [];
+  var accumulated = 0;
+  for (var i = 0; i < n - 1; i++) {
     plan.push(Object.assign({}, heaviest));
-    cumulative += heaviest.mass;
-    if (plan.length > MAX_PLAN_PASSES + 1) {
-      if (plan.length % 2 !== 0) { plan.push(Object.assign({}, lightest)); cumulative += lightest.mass; }
-      return { tooMany: true, passCount: plan.length, totalMass: cumulative };
-    }
+    accumulated += heaviest.mass;
   }
-  if (plan.length % 2 !== 0) { plan.push(Object.assign({}, lightest)); cumulative += lightest.mass; }
-  let running = 0;
+
+  // Final pass: pick the lightest ship whose mass is enough to cross the target.
+  // sorted is heaviest-first, so reverse gives lightest-first for the search.
+  var needed = target - accumulated;
+  var sortedAsc = sorted.slice().reverse();
+  var finalPass = heaviest; // heaviest always qualifies (n * heaviest >= target by construction)
+  for (var j = 0; j < sortedAsc.length; j++) {
+    if (sortedAsc[j].mass >= needed) { finalPass = sortedAsc[j]; break; }
+  }
+  plan.push(Object.assign({}, finalPass));
+  accumulated += finalPass.mass;
+
+  var running = 0;
   return {
     passes: plan.map(function(p) { running += p.mass; return Object.assign({}, p, { running: running }); }),
-    totalMass: cumulative
+    totalMass: accumulated
   };
 }
 self.onmessage = function(e) {
   var d = e.data;
   self.postMessage({
-    bestCasePlan:  buildPlan(d.options, d.massToColMin),
-    worstCasePlan: buildPlan(d.options, d.massToColMax),
+    remainingBest:  buildPlan(d.options, d.massToColMin),
+    remainingWorst: buildPlan(d.options, d.massToColMax),
+    fullBest:       buildPlan(d.options, d.fullMassMin),
+    fullWorst:      buildPlan(d.options, d.fullMassMax),
+    stateBest:      buildPlan(d.options, d.stateMassMin),
+    stateWorst:     buildPlan(d.options, d.stateMassMax),
   });
 };
 `;
@@ -97,6 +117,7 @@ createApp({
     const ships      = ref(JSON.parse(localStorage.getItem(STORAGE_SHIPS)    || '[]'));
     const passes     = ref(JSON.parse(localStorage.getItem(STORAGE_PASSES)   || '[]'));
     const farSideShips = ref(JSON.parse(localStorage.getItem(STORAGE_FAR_SIDE) || '[]'));
+    const rollingTarget = ref(localStorage.getItem(STORAGE_ROLLING_TARGET) || 'collapse'); // 'collapse' | 'critical'
 
     const passForm = reactive({
       mode:       'ship',  // 'ship' | 'custom'
@@ -127,6 +148,7 @@ createApp({
     watch(farSideShips,val => localStorage.setItem(STORAGE_FAR_SIDE, JSON.stringify(val)), { deep: true });
     watch(wormhole, val => localStorage.setItem(STORAGE_WH,    JSON.stringify({ ...val })), { deep: true });
     watch(massUnit, val => localStorage.setItem(STORAGE_UNIT, val));
+    watch(rollingTarget, val => localStorage.setItem(STORAGE_ROLLING_TARGET, val));
 
     // ── Theme ────────────────────────────────────────────────────────────────
     function applyTheme() {
@@ -168,12 +190,42 @@ createApp({
 
     // ── Mass Computeds ───────────────────────────────────────────────────────
     const usedMass = computed(() => passes.value.reduce((s, p) => s + p.mass, 0));
-    const usedPct  = computed(() => wormhole.totalMass > 0 ? (usedMass.value / wormhole.totalMass) * 100 : 0);
 
-    const massToReduced  = computed(() => Math.max(0, wormhole.totalMass * 0.5 - usedMass.value));
-    const massToCritical = computed(() => Math.max(0, wormhole.totalMass * 0.9 - usedMass.value));
-    const massToColMin   = computed(() => Math.max(0, wormhole.totalMass * 1.0 - usedMass.value));
-    const massToColMax   = computed(() => Math.max(0, wormhole.totalMass * 1.1 - usedMass.value));
+    // When the user records an observed state change, treat at least that state's
+    // threshold as consumed — even if fewer actual passes have been recorded.
+    const statusMinUsed = computed(() => {
+      switch (wormhole.status) {
+        case 'reduced':   return wormhole.totalMass * 0.50;
+        case 'critical':  return wormhole.totalMass * 0.90;
+        case 'collapsed': return wormhole.totalMass * 1.00;
+        default:          return 0;
+      }
+    });
+
+    // Mass from passes recorded *after* the last state-change entry. Passes before
+    // the state change observation are accounted for by statusMinUsed (they're why
+    // the WH reached that state). Passes after it are additional rolling progress.
+    const usedMassAfterLastState = computed(() => {
+      let lastStateIdx = -1;
+      for (let i = passes.value.length - 1; i >= 0; i--) {
+        if (passes.value[i].mode === 'state') { lastStateIdx = i; break; }
+      }
+      if (lastStateIdx < 0) return usedMass.value; // no state entries — all passes count
+      return passes.value.slice(lastStateIdx + 1).reduce((s, p) => s + p.mass, 0);
+    });
+
+    // effectiveUsedMass: max of (what we actually recorded) vs (state floor + passes after it).
+    // This ensures each new pass after a state observation reduces the remaining plan.
+    const effectiveUsedMass = computed(() =>
+      Math.max(usedMass.value, statusMinUsed.value + usedMassAfterLastState.value)
+    );
+
+    const usedPct  = computed(() => wormhole.totalMass > 0 ? (effectiveUsedMass.value / wormhole.totalMass) * 100 : 0);
+
+    const massToReduced  = computed(() => Math.max(0, wormhole.totalMass * 0.5 - effectiveUsedMass.value));
+    const massToCritical = computed(() => Math.max(0, wormhole.totalMass * 0.9 - effectiveUsedMass.value));
+    const massToColMin   = computed(() => Math.max(0, wormhole.totalMass * (rollingTarget.value === 'critical' ? 0.9 : 1.0) - effectiveUsedMass.value));
+    const massToColMax   = computed(() => Math.max(0, wormhole.totalMass * (rollingTarget.value === 'critical' ? 1.0 : 1.1) - effectiveUsedMass.value));
 
     // ── Far Side Ships ───────────────────────────────────────────────────────
     const farSideMass = computed(() => farSideShips.value.reduce((s, f) => s + f.mass, 0));
@@ -236,14 +288,17 @@ createApp({
     });
     const passesReversed = computed(() => [...passesWithRunning.value].reverse());
 
+    function capitalise(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
     function passLabel(pass) {
+      if (pass.mode === 'state') return `⚑ → ${capitalise(pass.newStatus)}`;
+      if (pass.mode === 'plan')  return pass.label;
       if (pass.mode === 'custom') return 'Custom Pass';
       const ship = ships.value.find(s => s.id === pass.shipId);
       return `${ship?.name ?? 'Unknown'} (${pass.passType === 'hot' ? '♨ Hot' : '❄ Cold'})`;
     }
 
     // ── Calculator ───────────────────────────────────────────────────────────
-    // Only include ship+passType combos that fit through the wormhole size
     const passOptions = computed(() => {
       const opts = [];
       for (const ship of ships.value) {
@@ -270,37 +325,55 @@ createApp({
         : []
     );
 
-    const worstCasePlan = ref(null);
-    const bestCasePlan  = ref(null);
+    const worstCasePlan      = ref(null);
+    const bestCasePlan       = ref(null);
+    const fullWorstCasePlan  = ref(null);
+    const fullBestCasePlan   = ref(null);
+    const stateWorstCasePlan = ref(null);
+    const stateBestCasePlan  = ref(null);
     const calcBusy      = ref(false);
-    const calcDirty     = ref(true); // true = needs recalc on next tab visit
+    const calcDirty     = ref(false);
 
-    // Receive results back from the worker
+    // Receive results back from the worker — all 3 plan pairs at once
     _calcWorker.onmessage = (e) => {
-      worstCasePlan.value = e.data.worstCasePlan;
-      bestCasePlan.value  = e.data.bestCasePlan;
+      worstCasePlan.value      = e.data.remainingWorst;
+      bestCasePlan.value       = e.data.remainingBest;
+      fullWorstCasePlan.value  = e.data.fullWorst;
+      fullBestCasePlan.value   = e.data.fullBest;
+      stateWorstCasePlan.value = e.data.stateWorst;
+      stateBestCasePlan.value  = e.data.stateBest;
       calcBusy.value = false;
+      if (calcDirty.value) triggerCalc();
     };
 
-    // Mark dirty whenever the inputs that affect the calc change
-    watch([passOptions, massToColMin, massToColMax], () => { calcDirty.value = true; });
-    watch(farSideShips, () => { calcDirty.value = true; }, { deep: true });
-
-    // Only calculate when the user navigates to the Calculator tab
     function triggerCalc() {
-      if (!calcDirty.value) return;
+      if (calcBusy.value) { calcDirty.value = true; return; }
       calcBusy.value      = true;
       worstCasePlan.value = null;
       bestCasePlan.value  = null;
+      fullWorstCasePlan.value  = null;
+      fullBestCasePlan.value   = null;
+      stateWorstCasePlan.value = null;
+      stateBestCasePlan.value  = null;
       calcDirty.value     = false;
+      const totalMin = wormhole.totalMass * (rollingTarget.value === 'critical' ? 0.9 : 1.0);
+      const totalMax = wormhole.totalMass * (rollingTarget.value === 'critical' ? 1.0 : 1.1);
       _calcWorker.postMessage({
         options:      passOptions.value,
         massToColMin: effectiveMassToColMin.value,
         massToColMax: effectiveMassToColMax.value,
+        fullMassMin:  Math.max(0, totalMin - farSideMass.value),
+        fullMassMax:  Math.max(0, totalMax - farSideMass.value),
+        stateMassMin: Math.max(0, totalMin - statusMinUsed.value - farSideMass.value),
+        stateMassMax: Math.max(0, totalMax - statusMinUsed.value - farSideMass.value),
       });
     }
 
-    watch(activeTab, tab => { if (tab === 'calc') triggerCalc(); });
+    watch([passOptions, massToColMin, massToColMax, effectiveUsedMass], () => triggerCalc());
+    watch(farSideShips, () => triggerCalc(), { deep: true });
+    watch(activeTab, tab => { if (tab === 'roll') triggerCalc(); });
+
+    triggerCalc(); // run immediately on load
 
     // ── Actions ──────────────────────────────────────────────────────────────
     function addPass() {
@@ -330,10 +403,31 @@ createApp({
     function removePass(id) {
       const idx = passes.value.findIndex(p => p.id === id);
       if (idx >= 0) passes.value.splice(idx, 1);
+      // Keep wormhole.status in sync with the most recent remaining state entry
+      const lastState = [...passes.value].reverse().find(p => p.mode === 'state');
+      wormhole.status = lastState?.newStatus ?? 'stable';
     }
 
     function clearPasses() {
       if (confirm('Clear all recorded passes for this session?')) passes.value = [];
+    }
+
+    // Record a pass directly from a plan row (plan rows have label + mass)
+    function recordPlanPass(row) {
+      passes.value.push({ id: genId(), mode: 'plan', label: row.label, mass: row.mass });
+    }
+
+    // State progression: stable → reduced → critical → collapsed
+    const nextWhState = computed(() => {
+      const seq = { stable: 'reduced', reduced: 'critical', critical: 'collapsed' };
+      return seq[wormhole.status] ?? null;
+    });
+
+    function advanceWhState() {
+      const next = nextWhState.value;
+      if (!next) return;
+      wormhole.status = next;
+      passes.value.push({ id: genId(), mode: 'state', newStatus: next, mass: 0 });
     }
 
     function resetSession() {
@@ -394,6 +488,10 @@ createApp({
       if (confirm('Remove this ship from the fleet?')) ships.value = ships.value.filter(s => s.id !== id);
     }
 
+    function cloneShip(s) {
+      ships.value.push({ ...s, id: genId(), name: s.name + ' (copy)' });
+    }
+
     // ── YAML ─────────────────────────────────────────────────────────────────
     // YAML always stores masses in kg for portability, regardless of display unit
     function exportYAML() {
@@ -432,25 +530,191 @@ createApp({
 
     function threshClass(val) { return val <= 0 ? 'text-success' : ''; }
 
+    // ── Display Plans (rolling passes + far-side return rows merged) ──────────
+    function _whStateAfter(pct) {
+      if (pct >= 100) return 'Collapsed ⊗';
+      if (pct >= 90)  return 'Critical ⚠';
+      if (pct >= 50)  return 'Reduced';
+      return 'Stable';
+    }
+
+    function buildDisplayPlan(plan, planTarget, base = null) {
+      if (!plan || plan.impossible || plan.tooMany) return [];
+
+      const b      = base ?? effectiveUsedMass.value; // recorded passes + state-implied minimum
+      const total  = wormhole.totalMass;   // nominal 100% — used for state thresholds and %
+      const target = planTarget ?? total;  // plan-specific target for remaining countdown
+      const thresholds = [
+        { key: 'reduced',   label: 'Reduced (50%)',    mass: total * 0.5 },
+        { key: 'critical',  label: 'Critical (90%)',   mass: total * 0.9 },
+        { key: 'collapsed', label: 'Collapsed (100%)', mass: total * 1.0 },
+      ].filter(t => t.mass > b); // skip thresholds already crossed
+
+      const rollingRows = (plan.passes || []).map(p => ({ ...p, rowType: 'rolling' }));
+      let running = plan.totalMass || 0;
+      const farRows = farSideShips.value.map(f => {
+        running += f.mass;
+        return { rowType: 'far-side', label: f.label, mass: f.mass, running };
+      });
+      const rawRows = [...rollingRows, ...farRows];
+
+      // Interleave threshold separators after the pass that crosses each threshold
+      const allRows = [];
+      let prevRunning = 0;
+      for (const row of rawRows) {
+        const totalThrough = b + row.running;
+        const remaining    = target - totalThrough;               // vs plan target
+        const pct          = total > 0 ? (totalThrough / total) * 100 : 0; // vs nominal WH mass
+        allRows.push({ ...row, totalThrough, remaining, pct, stateAfter: _whStateAfter(pct) });
+        for (const thr of thresholds) {
+          const rel = thr.mass - b;
+          if (prevRunning < rel && row.running >= rel) {
+            allRows.push({ rowType: 'threshold', label: thr.label, key: thr.key });
+          }
+        }
+        prevRunning = row.running;
+      }
+
+      // Assign sequential pass numbers (skipping threshold rows) and mark final
+      let passNum = 0;
+      let lastPassIdx = -1;
+      for (let i = 0; i < allRows.length; i++) {
+        if (allRows[i].rowType !== 'threshold') { allRows[i].num = ++passNum; lastPassIdx = i; }
+      }
+      if (lastPassIdx >= 0) allRows[lastPassIdx] = { ...allRows[lastPassIdx], isFinal: true };
+
+      return allRows;
+    }
+
+    // ── Unified Plan (done passes + planned passes merged) ────────────────────
+    // planViewMode:
+    //   'remaining'   — show completed passes + plan for remaining mass (default)
+    //   'full'        — full plan ignoring passes and state
+    //   'full-state'  — full plan ignoring passes but accounting for observed state
+    const activePlanView = ref('worst');
+    const planViewMode   = ref('remaining');
+
+    // Which worker-result plans to use for the current view mode
+    const currentBestPlan = computed(() => {
+      if (planViewMode.value === 'full')       return fullBestCasePlan.value;
+      if (planViewMode.value === 'full-state') return stateBestCasePlan.value;
+      return bestCasePlan.value;
+    });
+    const currentWorstPlan = computed(() => {
+      if (planViewMode.value === 'full')       return fullWorstCasePlan.value;
+      if (planViewMode.value === 'full-state') return stateWorstCasePlan.value;
+      return worstCasePlan.value;
+    });
+
+    // The display-plan base offset for the current view mode
+    const planBase = computed(() => {
+      if (planViewMode.value === 'full')       return 0;
+      if (planViewMode.value === 'full-state') return statusMinUsed.value;
+      return null; // null → buildDisplayPlan uses effectiveUsedMass
+    });
+
+    function buildFullDisplayPlan(plan, planTarget, base) {
+      const result = [];
+
+      // In 'remaining' mode, show completed passes above the plan
+      if (planViewMode.value === 'remaining') {
+        for (const p of passesWithRunning.value) {
+          if (p.mode === 'state') {
+            result.push({ rowType: 'state-marker', id: p.id, label: passLabel(p), newStatus: p.newStatus });
+          } else {
+            const pct = wormhole.totalMass > 0 ? (p.running / wormhole.totalMass) * 100 : 0;
+            result.push({
+              rowType: 'done',
+              id: p.id,
+              label: passLabel(p),
+              mass: p.mass,
+              running: p.running,
+              num: p.num,
+              totalThrough: p.running,
+              pct,
+              stateAfter: _whStateAfter(pct),
+            });
+          }
+        }
+      }
+
+      const plannedRows = buildDisplayPlan(plan, planTarget, base);
+
+      if (planViewMode.value === 'remaining') {
+        const hasCompleted = result.some(r => r.rowType === 'done');
+        const hasPlanned   = plannedRows.some(r => r.rowType !== 'threshold');
+        if (hasCompleted && hasPlanned) result.push({ rowType: 'divider' });
+      }
+
+      let foundNext = false;
+      for (const row of plannedRows) {
+        if (!foundNext && row.rowType !== 'threshold') {
+          // Only mark isNext (✓ record button) in 'remaining' mode
+          result.push({ ...row, isNext: planViewMode.value === 'remaining' });
+          foundNext = true;
+        } else {
+          result.push(row);
+        }
+      }
+
+      return result;
+    }
+
+    const displayFullBestCase = computed(() => buildFullDisplayPlan(
+      currentBestPlan.value,
+      wormhole.totalMass * (rollingTarget.value === 'critical' ? 0.9 : 1.0),
+      planBase.value
+    ));
+    const displayFullWorstCase = computed(() => buildFullDisplayPlan(
+      currentWorstPlan.value,
+      wormhole.totalMass * (rollingTarget.value === 'critical' ? 1.0 : 1.1),
+      planBase.value
+    ));
+    const activePlanDisplay = computed(() =>
+      activePlanView.value === 'best' ? displayFullBestCase.value : displayFullWorstCase.value
+    );
+    const activePlan = computed(() =>
+      activePlanView.value === 'best' ? currentBestPlan.value : currentWorstPlan.value
+    );
+    const nextPassRow = computed(() => {
+      const display = activePlanDisplay.value;
+      return display.find(r => r.isNext) ?? null;
+    });
+
+
+    const passTooltip = reactive({ show: false, x: 0, y: 0, row: null });
+
+    function showPassTooltip(event, row) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      passTooltip.row  = row;
+      passTooltip.x    = rect.left + rect.width / 2;
+      passTooltip.y    = rect.top - 8;
+      passTooltip.show = true;
+    }
+    function hidePassTooltip() { passTooltip.show = false; }
+
     // ── Expose to template ───────────────────────────────────────────────────
     return {
       activeTab, selectedTheme, massUnit, wormhole, ships, passes, passForm, shipModal, yamlFileRef,
       WH_SIZES, whSizeInfo, whSizeLimit, excludedShips, coldOnlyShips,
-      usedMass, usedPct,
+      usedMass, effectiveUsedMass, statusMinUsed, usedPct,
       massToReduced, massToCritical, massToColMin, massToColMax,
       farSideShips, farSideForm, farSideMass, farSideSelectedShip, farSideShipMass,
       canSubmitFarSide, farSideCustomMassInput, farSideAloneCollapses, farSideOverCollapses,
       effectiveMassToColMin, effectiveMassToColMax,
+      rollingTarget, planViewMode,
+      activePlanView, activePlanDisplay, activePlan, nextPassRow,
+      passTooltip, showPassTooltip, hidePassTooltip,
       barFillStyle, barVarianceStyle, markerReducedLeft, markerCriticalLeft, markerTotalLeft,
       statusClass, selectedShip, shipPassMass, shipPassFits, canSubmitPass,
-      passesReversed, passOptions, worstCasePlan, bestCasePlan, calcBusy,
+      passesReversed, passesWithRunning, passOptions, worstCasePlan, bestCasePlan, calcBusy,
       shipModalValid, unitStep,
       whTotalMassInput, draftColdInput, draftHotInput, customMassInput,
       applyTheme, fmtMass, massFits,
-      addPass, removePass, clearPasses, resetSession,
+      addPass, removePass, clearPasses, resetSession, recordPlanPass, advanceWhState, nextWhState,
       addFarSideShip, removeFarSideShip,
       passLabel, threshClass,
-      openAddShip, openEditShip, closeShipModal, saveShip, deleteShip,
+      openAddShip, openEditShip, closeShipModal, saveShip, deleteShip, cloneShip,
       exportYAML, triggerImport, handleYAMLFile,
     };
   },

@@ -85,13 +85,6 @@
       :aria-selected="activeTab === 'roll'"
       @click="activeTab = 'roll'"
     >↻ Roll</button>
-    <button
-      role="tab"
-      class="tab-btn"
-      :class="{ active: activeTab === 'calc' }"
-      :aria-selected="activeTab === 'calc'"
-      @click="activeTab = 'calc'"
-    >◈ Calculator</button>
   </nav>
 
   <!-- ══════════════════════════════════════════════════════════
@@ -148,6 +141,13 @@
                 <option v-for="sz in WH_SIZES" :key="sz.id" :value="sz.id">
                   {{ sz.label }} — {{ sz.desc }} (≤ {{ fmtMass(sz.maxShipMass) }})
                 </option>
+              </select>
+            </label>
+            <label class="form-label">
+              Rolling Target
+              <select v-model="rollingTarget" class="form-input">
+                <option value="collapse">Collapse — exceed 100% mass (recommended)</option>
+                <option value="critical">Critical — exceed 90% mass, manual final roll</option>
               </select>
             </label>
             <button @click="resetSession" class="btn btn-danger btn-sm" style="align-self:flex-start;margin-top:4px">
@@ -214,6 +214,7 @@
                   </td>
                   <td class="ship-actions">
                     <button @click="openEditShip(ship)" class="btn btn-secondary btn-xs">Edit</button>
+                    <button @click="cloneShip(ship)"    class="btn btn-secondary btn-xs" title="Clone ship">⎘</button>
                     <button @click="deleteShip(ship.id)"  class="btn btn-danger btn-xs">✕</button>
                   </td>
                 </tr>
@@ -372,8 +373,10 @@
             <div class="mass-stats-grid">
               <div class="mass-stat">
                 <div class="mass-stat-label">Used</div>
-                <div class="mass-stat-value font-mono">{{ fmtMass(usedMass) }}</div>
-                <div class="mass-stat-pct">{{ usedPct.toFixed(1) }}%</div>
+                <div class="mass-stat-value font-mono">{{ fmtMass(effectiveUsedMass) }}</div>
+                <div class="mass-stat-pct">{{ usedPct.toFixed(1) }}%
+                  <span v-if="statusMinUsed > usedMass" class="text-muted" style="font-size:0.65rem"> (observed)</span>
+                </div>
               </div>
               <div class="mass-stat">
                 <div class="mass-stat-label">→ Reduced</div>
@@ -496,239 +499,154 @@
               @click="addPass"
               :disabled="!canSubmitPass"
               class="btn btn-primary btn-full"
-            >
-              ↻ Record Pass
-            </button>
+            >↻ Record Pass</button>
           </section><!-- /.roll-card-addpass -->
 
-        <!-- Pass History Card -->
-        <section class="card roll-card-history" aria-labelledby="history-title">
+          <!-- Plan Card - right column -->
+          <section class="card roll-card-plan" aria-labelledby="plan-title">
             <div class="card-header">
-              <h2 class="card-title" id="history-title">
-                Pass History
-                <span v-if="passes.length" style="font-weight:400;color:var(--color-text-muted)">({{ passes.length }})</span>
-              </h2>
-              <button
-                v-if="passes.length > 0"
-                @click="clearPasses"
-                class="btn btn-danger btn-sm"
-              >Clear</button>
-            </div>
-
-            <div v-if="passes.length === 0" class="empty-state">
-              No passes recorded yet.<br>Record your first pass to start tracking.
-            </div>
-
-            <div v-else class="pass-history" role="list">
-              <div
-                v-for="pass in passesReversed"
-                :key="pass.id"
-                class="pass-entry"
-                :class="{ 'is-custom': pass.mode === 'custom' }"
-                role="listitem"
-              >
-                <span class="pass-num">#{{ pass.num }}</span>
-                <span class="pass-desc">{{ passLabel(pass) }}</span>
-                <span class="pass-mass text-accent">{{ fmtMass(pass.mass) }}</span>
-                <span class="pass-running text-muted">{{ fmtMass(pass.running) }} total</span>
+              <div>
+                <h2 class="card-title" id="plan-title">Rolling Plan</h2>
+                <div v-if="nextPassRow" class="plan-next-label">
+                  Next: <strong>{{ nextPassRow.label }}</strong> — {{ fmtMass(nextPassRow.mass) }}
+                </div>
                 <button
-                  @click="removePass(pass.id)"
-                  class="btn btn-xs btn-danger"
-                  :aria-label="`Remove pass ${passLabel(pass)}`"
-                >✕</button>
+                  v-if="nextWhState"
+                  @click="advanceWhState"
+                  class="btn btn-sm plan-advance-state-btn"
+                  :title="`Mark wormhole as ${nextWhState}`"
+                >⇧ Observed: {{ nextWhState.charAt(0).toUpperCase() + nextWhState.slice(1) }}</button>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <div class="plan-view-tabs" role="group">
+                  <button class="pass-type-tab" :class="{ active: planViewMode === 'remaining' }" @click="planViewMode = 'remaining'">From Here</button>
+                  <button class="pass-type-tab" :class="{ active: planViewMode !== 'remaining' }" @click="if (planViewMode === 'remaining') planViewMode = 'full'">Full Plan</button>
+                </div>
+                <div v-if="planViewMode !== 'remaining'" class="plan-view-tabs" role="group">
+                  <button class="pass-type-tab" :class="{ active: planViewMode === 'full' }" @click="planViewMode = 'full'" title="Ignore all recorded passes and state changes">No State</button>
+                  <button class="pass-type-tab" :class="{ active: planViewMode === 'full-state' }" @click="planViewMode = 'full-state'" title="Ignore passes, but account for observed state">With State</button>
+                </div>
+                <div class="plan-view-tabs" role="group">
+                  <button class="pass-type-tab" :class="{ active: activePlanView === 'worst' }" @click="activePlanView = 'worst'">Worst</button>
+                  <button class="pass-type-tab" :class="{ active: activePlanView === 'best' }" @click="activePlanView = 'best'">Best</button>
+                </div>
+                <button v-if="passes.length > 0" @click="clearPasses" class="btn btn-danger btn-sm">Clear</button>
               </div>
             </div>
-          </section><!-- /.roll-card-history -->
 
-      </div><!-- /.roll-tab-content -->
-    </div>
-
-    <!-- ──────────────────────────────────────────────────────
-         CALCULATOR TAB
-    ─────────────────────────────────────────────────────── -->
-    <div v-if="activeTab === 'calc'" class="tab-content">
-      <section class="card" aria-labelledby="calc-title">
-        <h2 class="card-title" id="calc-title">Optimal Roll Calculator</h2>
-
-        <div v-if="ships.length === 0" class="empty-state">
-          Configure ships in the Setup tab to use the calculator.
-        </div>
-        <div v-else-if="wormhole.totalMass <= 0" class="empty-state">
-          Set the wormhole total mass in the Setup tab.
-        </div>
-        <div v-else>
-
-          <!-- Current state summary -->
-          <div class="calc-state-summary">
-            <div class="calc-state-item">
-              <span class="calc-state-label">Total Mass</span>
-              <span class="calc-state-value">{{ fmtMass(wormhole.totalMass) }}</span>
-            </div>
-            <div class="calc-state-item">
-              <span class="calc-state-label">Used (this session)</span>
-              <span class="calc-state-value">{{ fmtMass(usedMass) }}</span>
-            </div>
-            <div class="calc-state-item">
-              <span class="calc-state-label">Status</span>
-              <span class="calc-state-value" :class="statusClass">{{ wormhole.status.toUpperCase() }}</span>
-            </div>
-            <div class="calc-state-item">
-              <span class="calc-state-label">Available pass options</span>
-              <span class="calc-state-value">{{ passOptions.length }}</span>
-            </div>
-          </div>
-
-          <p style="font-size:0.75rem;color:var(--color-text-muted);margin-bottom:14px">
-            Plans are calculated from the current session's recorded passes.
-            If the wormhole was partially used before this session, add custom passes to account for prior mass.
-            All plans ensure an <strong style="color:var(--color-text-secondary)">even number of passes</strong>
-            so all ships return to the origin side.
-          </p>
-          <div v-if="excludedShips.length" class="excluded-ships-notice" role="status">
-            <span class="excluded-icon">⚠</span>
-            <span>
-              <strong>{{ excludedShips.length }} ship{{ excludedShips.length > 1 ? 's' : '' }}</strong>
-              excluded from plans (too heavy for {{ whSizeInfo?.label ?? 'selected' }} wormhole):
-              <em>{{ excludedShips.map(s => s.name).join(', ') }}</em>
-            </span>
-          </div>
-          <div v-if="coldOnlyShips.length" class="cold-only-notice" role="status">
-            <span class="excluded-icon">❄</span>
-            <span>
-              <strong>{{ coldOnlyShips.length }} ship{{ coldOnlyShips.length > 1 ? 's' : '' }}</strong>
-              can only pass <strong>cold</strong> through this wormhole (hot mass too heavy):
-              <em>{{ coldOnlyShips.map(s => s.name).join(', ') }}</em>
-            </span>
-          </div>
-
-          <!-- Spinner while worker is computing -->
-          <div v-if="calcBusy" class="calc-spinner-wrap" role="status" aria-live="polite">
-            <span class="calc-spinner" aria-hidden="true"></span>
-            <span class="calc-spinner-label">Calculating optimal plan…</span>
-          </div>
-
-          <template v-else-if="worstCasePlan">
-
-            <!-- Far Side Return Passes notice -->
-            <div v-if="farSideShips.length" class="far-side-calc-notice">
-              <div class="far-side-calc-header">
-                <span>⬅ Far Side Return Passes</span>
-                <span class="far-side-calc-total">{{ fmtMass(farSideMass) }} reserved</span>
+            <div v-if="ships.length === 0" class="empty-state">Configure ships in the Setup tab.</div>
+            <div v-else-if="wormhole.totalMass <= 0" class="empty-state">Set the wormhole total mass in Setup.</div>
+            <div v-else>
+              <!-- Excluded/cold-only notices -->
+              <div v-if="excludedShips.length" class="excluded-ships-notice" role="status">
+                <span class="excluded-icon">⚠</span>
+                <span><strong>{{ excludedShips.length }} ship{{ excludedShips.length > 1 ? 's' : '' }}</strong> excluded (too heavy): <em>{{ excludedShips.map(s => s.name).join(', ') }}</em></span>
               </div>
-              <div v-if="farSideOverCollapses" class="plan-alert" style="margin-top:8px">
-                ⚠ Far side ships exceed the wormhole's maximum mass ({{ fmtMass(massToColMax) }}).
-                The wormhole may collapse before all ships make it through!
+              <div v-if="coldOnlyShips.length" class="cold-only-notice" role="status">
+                <span class="excluded-icon">❄</span>
+                <span><strong>{{ coldOnlyShips.length }} ship{{ coldOnlyShips.length > 1 ? 's' : '' }}</strong> cold-only: <em>{{ coldOnlyShips.map(s => s.name).join(', ') }}</em></span>
               </div>
-              <div v-else-if="farSideAloneCollapses" class="plan-alert is-collapsed" style="margin-top:8px">
-                ✓ Far side ships returning will collapse the wormhole on their own — no additional rolling passes needed.
-              </div>
-              <div class="far-side-calc-list">
-                <div v-for="f in farSideShips" :key="f.id" class="far-side-calc-item">
-                  <span class="far-side-calc-label">{{ f.label }}</span>
-                  <span class="far-side-calc-mass">{{ fmtMass(f.mass) }}</span>
+
+              <!-- Far side over-collapse warning -->
+              <div v-if="farSideShips.length && farSideOverCollapses" class="far-side-calc-notice">
+                <div class="far-side-calc-header">
+                  <span>⬅ Far Side Return Passes</span>
+                  <span class="far-side-calc-total">{{ fmtMass(farSideMass) }} reserved</span>
+                </div>
+                <div class="plan-alert" style="margin-top:8px">
+                  ⚠ Far side ships exceed the wormhole's maximum mass ({{ fmtMass(massToColMax) }}).
                 </div>
               </div>
-            </div>
 
-            <div v-if="!farSideAloneCollapses && !farSideOverCollapses" class="plans-grid">
+              <!-- Spinner -->
+              <div v-if="calcBusy" class="calc-spinner-wrap" role="status" aria-live="polite">
+                <span class="calc-spinner" aria-hidden="true"></span>
+                <span class="calc-spinner-label">Calculating…</span>
+              </div>
 
-              <!-- Best Case Plan (0% variance — fewest passes) -->
-              <div class="plan-card">
-                <div class="plan-card-header">
-                  <div class="plan-card-title">Best Case</div>
-                  <div class="plan-card-subtitle">0% variance — wormhole is exactly as described, must exceed {{ fmtMass(wormhole.totalMass) }}</div>
-                </div>
-                <div v-if="bestCasePlan.alreadyCollapsed" class="plan-alert is-collapsed">
+              <template v-else-if="activePlan">
+                <!-- Already collapsed / impossible / tooMany alerts -->
+                <div v-if="activePlan.alreadyCollapsed" class="plan-alert is-collapsed">
                   ✓ Recorded passes{{ farSideShips.length ? ' + far side returns' : '' }} will collapse the wormhole.
                 </div>
-                <div v-else-if="bestCasePlan.impossible" class="plan-alert">
-                  {{ bestCasePlan.msg }}
-                </div>
-                <div v-else-if="bestCasePlan.tooMany" class="plan-alert">
-                  ⚠ Too many passes required ({{ bestCasePlan.passCount }}+). Use a heavier ship.
-                </div>
-                <div v-else>
-                  <div class="plan-passes-list" role="list">
-                    <div
-                      v-for="(pass, i) in bestCasePlan.passes"
-                      :key="i"
-                      class="plan-pass-item"
+                <div v-else-if="activePlan.impossible" class="plan-alert">{{ activePlan.msg }}</div>
+                <div v-else-if="activePlan.tooMany" class="plan-alert">⚠ Too many passes required ({{ activePlan.passCount }}+). Use a heavier ship.</div>
+
+                <!-- Unified pass list: done + divider + planned -->
+                <div class="plan-passes-list" role="list">
+                  <template v-for="(row, i) in activePlanDisplay" :key="i">
+
+                    <!-- Divider between completed and planned -->
+                    <div v-if="row.rowType === 'divider'" class="plan-divider">── Remaining Plan ──</div>
+
+                    <!-- State change marker -->
+                    <div v-else-if="row.rowType === 'state-marker'" class="plan-threshold-sep is-state" style="display:flex;justify-content:space-between;align-items:center">
+                      <span>{{ row.label }}</span>
+                      <button @click="removePass(row.id)" class="btn btn-xs btn-danger" style="padding:1px 6px;font-size:0.7rem" :aria-label="`Remove ${row.label}`">✕</button>
+                    </div>
+
+                    <!-- Threshold separator -->
+                    <div v-else-if="row.rowType === 'threshold'" :class="['plan-threshold-sep', 'is-' + row.key]">
+                      <span>{{ row.label }}</span>
+                    </div>
+
+                    <!-- Done pass (from history) -->
+                    <div v-else-if="row.rowType === 'done'"
+                      class="plan-pass-item is-done"
                       role="listitem"
                     >
-                      <span class="plan-pass-n">{{ i + 1 }}</span>
-                      <span class="plan-pass-label">{{ pass.label }}</span>
-                      <span class="plan-pass-mass">{{ fmtMass(pass.mass) }}</span>
-                      <span class="plan-pass-running">{{ fmtMass(pass.running) }}</span>
+                      <span class="plan-pass-n">✓</span>
+                      <span class="plan-pass-label">{{ row.label }}</span>
+                      <span class="plan-pass-mass">{{ fmtMass(row.mass) }}</span>
+                      <span class="plan-pass-remaining">{{ fmtMass(row.totalThrough) }}</span>
+                      <button @click="removePass(row.id)" class="btn btn-xs btn-danger" :aria-label="`Remove pass ${row.label}`" style="margin-left:4px">✕</button>
                     </div>
-                  </div>
-                  <div class="plan-footer">
-                    <span class="plan-footer-stat">
-                      Passes: <strong>{{ bestCasePlan.passes.length }}</strong>
-                    </span>
-                    <span class="plan-footer-stat">
-                      Rolling: <strong>{{ fmtMass(bestCasePlan.totalMass) }}</strong>
-                    </span>
-                    <span v-if="farSideShips.length" class="plan-footer-stat">
-                      Far side: <strong>{{ fmtMass(farSideMass) }}</strong>
-                    </span>
-                    <span class="plan-footer-stat">
-                      Needed: <strong>{{ fmtMass(massToColMin) }}</strong>
-                    </span>
-                  </div>
-                </div>
-              </div>
 
-              <!-- Worst Case Plan (10% variance — most passes) -->
-              <div class="plan-card">
-                <div class="plan-card-header">
-                  <div class="plan-card-title">Worst Case</div>
-                  <div class="plan-card-subtitle">10% variance — wormhole has 10% more mass than described, must exceed {{ fmtMass(wormhole.totalMass * 1.1) }}</div>
-                </div>
-                <div v-if="worstCasePlan.alreadyCollapsed" class="plan-alert is-collapsed">
-                  ✓ Recorded passes{{ farSideShips.length ? ' + far side returns' : '' }} will definitely collapse the wormhole.
-                </div>
-                <div v-else-if="worstCasePlan.impossible" class="plan-alert">
-                  {{ worstCasePlan.msg }}
-                </div>
-                <div v-else-if="worstCasePlan.tooMany" class="plan-alert">
-                  ⚠ Too many passes required ({{ worstCasePlan.passCount }}+). Use a heavier ship.
-                </div>
-                <div v-else>
-                  <div class="plan-passes-list" role="list">
-                    <div
-                      v-for="(pass, i) in worstCasePlan.passes"
-                      :key="i"
-                      class="plan-pass-item"
+                    <!-- Planned pass (rolling or far-side) -->
+                    <div v-else
+                      :class="['plan-pass-item', { 'is-far-side': row.rowType === 'far-side', 'is-final': row.isFinal, 'is-next': row.isNext }]"
                       role="listitem"
+                      @mouseenter="showPassTooltip($event, row)"
+                      @mouseleave="hidePassTooltip"
                     >
-                      <span class="plan-pass-n">{{ i + 1 }}</span>
-                      <span class="plan-pass-label">{{ pass.label }}</span>
-                      <span class="plan-pass-mass">{{ fmtMass(pass.mass) }}</span>
-                      <span class="plan-pass-running">{{ fmtMass(pass.running) }}</span>
+                      <span class="plan-pass-n">{{ row.rowType === 'far-side' ? '⬅' : row.num }}</span>
+                      <span class="plan-pass-label">
+                        {{ row.label }}
+                        <span v-if="row.isNext" class="plan-next-badge">NEXT</span>
+                        <span v-if="row.isFinal" class="plan-collapse-icon" :title="rollingTarget === 'critical' ? 'Wormhole enters critical state' : 'Wormhole collapses'">⊗</span>
+                      </span>
+                      <span class="plan-pass-mass">{{ fmtMass(row.mass) }}</span>
+                      <span class="plan-pass-remaining" :class="{ 'is-over': row.remaining < 0 }">
+                        {{ row.remaining > 0 ? fmtMass(row.remaining) : '—' }}
+                      </span>
+                      <button
+                        v-if="row.isNext"
+                        @click="recordPlanPass(row)"
+                        class="btn btn-xs btn-primary plan-pass-record-btn"
+                        title="Record this pass"
+                      >✓</button>
                     </div>
-                  </div>
-                  <div class="plan-footer">
-                    <span class="plan-footer-stat">
-                      Passes: <strong>{{ worstCasePlan.passes.length }}</strong>
-                    </span>
-                    <span class="plan-footer-stat">
-                      Rolling: <strong>{{ fmtMass(worstCasePlan.totalMass) }}</strong>
-                    </span>
-                    <span v-if="farSideShips.length" class="plan-footer-stat">
-                      Far side: <strong>{{ fmtMass(farSideMass) }}</strong>
-                    </span>
-                    <span class="plan-footer-stat">
-                      Needed: <strong>{{ fmtMass(massToColMax) }}</strong>
-                    </span>
-                  </div>
+
+                  </template>
                 </div>
-              </div>
 
-            </div><!-- /.plans-grid -->
+                <!-- Plan footer stats -->
+                <div v-if="!activePlan.alreadyCollapsed && activePlanDisplay.length" class="plan-footer">
+                  <span v-if="activePlan.passes && activePlan.passes.length" class="plan-footer-stat">
+                    Rolling: <strong>{{ fmtMass(activePlan.totalMass) }}</strong>
+                  </span>
+                  <span v-if="farSideShips.length" class="plan-footer-stat">
+                    Far side: <strong>{{ fmtMass(farSideMass) }}</strong>
+                  </span>
+                  <span class="plan-footer-stat">
+                    Needed ({{ activePlanView }}): <strong>{{ fmtMass(activePlanView === 'best' ? massToColMin : massToColMax) }}</strong>
+                  </span>
+                </div>
+              </template>
+            </div>
+          </section><!-- /.roll-card-plan -->
 
-          </template>
-        </div>
-      </section>
+      </div><!-- /.roll-tab-content -->
     </div>
 
   </main><!-- /.app-main -->
@@ -801,6 +719,41 @@
   <a href="https://whtype.info" target="_blank" rel="noopener noreferrer">Wormhole Type Info</a>
   <a href="https://anoik.is" target="_blank" rel="noopener noreferrer">Anoik's Wormhole Info</a>
 </footer>
+
+<!-- Pass row hover tooltip (teleported to body to escape scroll container clipping) -->
+<Teleport to="body">
+  <div
+    v-if="passTooltip.show && passTooltip.row"
+    class="pass-row-tooltip"
+    :style="{ left: passTooltip.x + 'px', top: passTooltip.y + 'px' }"
+    role="tooltip"
+  >
+    <div class="prt-row prt-label">{{ passTooltip.row.label }}</div>
+    <div class="prt-divider"></div>
+    <div class="prt-row">
+      <span class="prt-key">This pass</span>
+      <span class="prt-val">{{ fmtMass(passTooltip.row.mass) }}</span>
+    </div>
+    <div class="prt-row">
+      <span class="prt-key">Total through WH</span>
+      <span class="prt-val">{{ fmtMass(passTooltip.row.totalThrough) }}</span>
+    </div>
+    <div class="prt-row">
+      <span class="prt-key">Remaining to target</span>
+      <span class="prt-val" :class="passTooltip.row.remaining < 0 ? 'prt-danger' : ''">
+        {{ passTooltip.row.remaining >= 0 ? fmtMass(passTooltip.row.remaining) : fmtMass(-passTooltip.row.remaining) + ' over' }}
+      </span>
+    </div>
+    <div class="prt-row">
+      <span class="prt-key">% consumed</span>
+      <span class="prt-val">{{ passTooltip.row.pct.toFixed(1) }}%</span>
+    </div>
+    <div class="prt-row">
+      <span class="prt-key">State after</span>
+      <span class="prt-val">{{ passTooltip.row.stateAfter }}</span>
+    </div>
+  </div>
+</Teleport>
 
 </div><!-- /#app -->
 
