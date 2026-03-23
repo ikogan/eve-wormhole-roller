@@ -319,10 +319,20 @@ body {
 }
 
 /* ── Form Elements ────────────────────────────────────────── */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-row .form-label {
+  flex: 0 0 80px;
+  margin: 0;
+}
+
+.toggle-group {
+  display: flex;
+  gap: 4px;
 }
 
 .form-label {
@@ -445,15 +455,6 @@ input[type="number"] { -moz-appearance: textfield; }
 .mass-bar-wrap {
   position: relative;
   margin-bottom: 8px;
-}
-
-.mass-bar-labels-top {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.7rem;
-  color: var(--color-text-muted);
-  margin-bottom: 4px;
-  letter-spacing: 0.04em;
 }
 
 .mass-bar-track {
@@ -581,7 +582,7 @@ input[type="number"] { -moz-appearance: textfield; }
 .pass-type-tab {
   flex: 1;
   padding: 9px 12px;
-  background: transparent;
+  background: var(--color-bg-secondary);
   border: none;
   color: var(--color-text-secondary);
   font-family: var(--font-ui);
@@ -593,6 +594,11 @@ input[type="number"] { -moz-appearance: textfield; }
   transition: all var(--transition);
   min-height: 44px;
   text-align: center;
+}
+
+.pass-type-tab:not(.active):hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
 }
 
 .pass-type-tab + .pass-type-tab {
@@ -670,110 +676,6 @@ input[type="number"] { -moz-appearance: textfield; }
   font-family: var(--font-mono);
 }
 
-/* ── Pass History ─────────────────────────────────────────── */
-.pass-history {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  max-height: 360px;
-  overflow-y: auto;
-  padding-right: 2px;
-}
-
-.pass-history::-webkit-scrollbar {
-  width: 4px;
-}
-.pass-history::-webkit-scrollbar-track {
-  background: var(--color-bg-tertiary);
-}
-.pass-history::-webkit-scrollbar-thumb {
-  background: var(--color-border-bright);
-  border-radius: 2px;
-}
-
-.pass-entry {
-  display: grid;
-  grid-template-columns: 28px 1fr auto auto auto;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 10px;
-  background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: 0.82rem;
-  transition: background var(--transition);
-}
-
-.pass-entry:hover {
-  background: var(--color-bg-hover);
-}
-
-.pass-entry.is-custom {
-  border-left: 3px solid var(--color-text-muted);
-}
-
-.pass-num {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--color-text-muted);
-  text-align: right;
-}
-
-.pass-desc {
-  font-weight: 500;
-  color: var(--color-text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.pass-mass {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  color: var(--color-accent);
-  white-space: nowrap;
-}
-
-.pass-running {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--color-text-muted);
-  white-space: nowrap;
-}
-
-/* ── Calculator ───────────────────────────────────────────── */
-.calc-state-summary {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  padding: 12px;
-  background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  margin-bottom: 16px;
-  font-size: 0.82rem;
-}
-
-.calc-state-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.calc-state-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-.calc-state-value {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
 /* ── Calculator Spinner ───────────────────────────────────── */
 .calc-spinner-wrap {
   display: flex;
@@ -800,40 +702,6 @@ input[type="number"] { -moz-appearance: textfield; }
 .calc-spinner-label {
   font-size: 0.85rem;
   letter-spacing: 0.03em;
-}
-
-.plans-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.plan-card {
-  background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.plan-card-header {
-  padding: 10px 14px;
-  background: var(--color-bg-secondary);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.plan-card-title {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-accent);
-  margin-bottom: 2px;
-}
-
-.plan-card-subtitle {
-  font-size: 0.7rem;
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
 }
 
 .plan-passes-list {
@@ -968,6 +836,9 @@ input[type="number"] { -moz-appearance: textfield; }
 .plan-view-tabs {
   display: flex;
   gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
 .plan-collapse-icon {
@@ -1059,13 +930,6 @@ input[type="number"] { -moz-appearance: textfield; }
 }
 
 /* ── Setup Tab Layout ─────────────────────────────────────── */
-.setup-grid {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 16px;
-  align-items: start;
-}
-
 /* Default (mobile): column layout for setup/roll content wrappers */
 .setup-tab-content,
 .roll-tab-content {
@@ -1131,16 +995,6 @@ input[type="number"] { -moz-appearance: textfield; }
 .text-muted   { color: var(--color-text-muted); }
 .font-mono    { font-family: var(--font-mono); }
 
-.section-divider {
-  border: none;
-  border-top: 1px solid var(--color-border);
-  margin: 4px 0;
-}
-
-/* Pass type color indicators in history */
-.pass-desc .hot-label  { color: var(--color-accent-hot);  }
-.pass-desc .cold-label { color: var(--color-accent-cold); }
-
 /* ── Responsive: Tablet and Desktop ───────────────────────── */
 @media (min-width: 768px) {
   .app-main {
@@ -1149,10 +1003,6 @@ input[type="number"] { -moz-appearance: textfield; }
 
   .mass-stats-grid {
     grid-template-columns: repeat(5, 1fr);
-  }
-
-  .plans-grid {
-    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -1210,24 +1060,8 @@ input[type="number"] { -moz-appearance: textfield; }
     padding: 12px;
   }
 
-  .plans-grid {
-    grid-template-columns: 1fr;
-  }
-
   .mass-stats-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .pass-entry {
-    grid-template-columns: 24px 1fr auto auto;
-  }
-
-  .pass-running {
-    display: none;
-  }
-
-  .form-grid {
-    grid-template-columns: 1fr;
   }
 
   .ship-actions {
@@ -1244,13 +1078,6 @@ input[type="number"] { -moz-appearance: textfield; }
   .hc-btn {
     padding: 0 8px;
     min-width: 55px;
-  }
-}
-
-/* ── Tablet landscape: two-column roll tab ────────────────── */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .plans-grid {
-    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -1369,7 +1196,7 @@ input[type="number"] { -moz-appearance: textfield; }
 }
 
 /* ── Transitions for theme switches ──────────────────────── */
-body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
+body, .card, .app-header, .tab-nav, .modal {
   transition:
     background-color var(--transition),
     border-color var(--transition),
@@ -1439,24 +1266,6 @@ body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
   color: var(--color-text-muted);
   font-weight: 400;
 }
-
-.far-side-calc-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 6px;
-}
-
-.far-side-calc-item {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 2px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-
-.far-side-calc-label { color: var(--color-text-primary); }
-.far-side-calc-mass  { color: var(--color-text-muted); font-family: monospace; }
 
 /* ── Form hint (read-only display value in form rows) ─────── */
 .form-hint {

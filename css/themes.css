@@ -720,6 +720,7 @@
   --shadow-glow:  0 0 18px var(--color-accent-glow);
 }
 
+[data-theme="soe"] {
   --color-bg-primary:    #0c0c18;
   --color-bg-secondary:  #131325;
   --color-bg-tertiary:   #1c1c32;
