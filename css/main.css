@@ -1167,6 +1167,9 @@ input[type="number"] { -moz-appearance: textfield; }
   text-align: center;
   font-size: 1rem;
   white-space: nowrap;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
 }
 
 .compat-ok      { color: var(--color-success); }
@@ -1227,4 +1230,44 @@ body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
     background-color var(--transition),
     border-color var(--transition),
     color var(--transition);
+}
+
+/* ── Cold-Only Ships Notice (calculator) ──────────────────── */
+.cold-only-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(41, 182, 246, 0.08);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  color: var(--color-accent);
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+/* ── App Footer ───────────────────────────────────────────── */
+.app-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.app-footer-label {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.app-footer a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.app-footer a:hover {
+  text-decoration: underline;
 }

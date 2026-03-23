@@ -3,10 +3,11 @@
 const { createApp, ref, computed, watch, reactive } = Vue;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const STORAGE_SHIPS = 'eve-whr-ships-v1';
-const STORAGE_THEME = 'eve-whr-theme-v1';
-const STORAGE_WH    = 'eve-whr-wormhole-v1';
-const STORAGE_UNIT  = 'eve-whr-unit-v1';
+const STORAGE_SHIPS  = 'eve-whr-ships-v1';
+const STORAGE_THEME  = 'eve-whr-theme-v1';
+const STORAGE_WH     = 'eve-whr-wormhole-v1';
+const STORAGE_UNIT   = 'eve-whr-unit-v1';
+const STORAGE_PASSES = 'eve-whr-passes-v1';
 
 // Individual ship mass limits per wormhole size (stored internally in kg)
 const WH_SIZES = [
@@ -93,7 +94,7 @@ createApp({
     });
 
     const ships  = ref(JSON.parse(localStorage.getItem(STORAGE_SHIPS) || '[]'));
-    const passes = ref([]); // session-only — intentionally not persisted
+    const passes = ref(JSON.parse(localStorage.getItem(STORAGE_PASSES) || '[]'));
 
     const passForm = reactive({
       mode:       'ship',  // 'ship' | 'custom'
@@ -111,8 +112,9 @@ createApp({
     const yamlFileRef = ref(null);
 
     // ── Persistence ──────────────────────────────────────────────────────────
-    watch(ships,    val => localStorage.setItem(STORAGE_SHIPS, JSON.stringify(val)), { deep: true });
-    watch(wormhole, val => localStorage.setItem(STORAGE_WH,   JSON.stringify({ ...val })), { deep: true });
+    watch(ships,    val => localStorage.setItem(STORAGE_SHIPS,  JSON.stringify(val)), { deep: true });
+    watch(passes,   val => localStorage.setItem(STORAGE_PASSES, JSON.stringify(val)), { deep: true });
+    watch(wormhole, val => localStorage.setItem(STORAGE_WH,    JSON.stringify({ ...val })), { deep: true });
     watch(massUnit, val => localStorage.setItem(STORAGE_UNIT, val));
 
     // ── Theme ────────────────────────────────────────────────────────────────
@@ -201,7 +203,7 @@ createApp({
     function passLabel(pass) {
       if (pass.mode === 'custom') return 'Custom Pass';
       const ship = ships.value.find(s => s.id === pass.shipId);
-      return `${ship?.name ?? 'Unknown'} (${pass.passType === 'hot' ? '🔥 Hot' : '❄ Cold'})`;
+      return `${ship?.name ?? 'Unknown'} (${pass.passType === 'hot' ? '♨ Hot' : '❄ Cold'})`;
     }
 
     // ── Calculator ───────────────────────────────────────────────────────────
@@ -219,6 +221,16 @@ createApp({
     const excludedShips = computed(() =>
       whSizeLimit.value
         ? ships.value.filter(s => !massFits(s.coldMass || 0) && !massFits(s.hotMass || 0))
+        : []
+    );
+
+    // Ships that can pass cold but whose hot mass exceeds the size limit
+    const coldOnlyShips = computed(() =>
+      whSizeLimit.value
+        ? ships.value.filter(s =>
+            massFits(s.coldMass || 0) &&
+            (s.hotMass || 0) > 0 && !massFits(s.hotMass || 0)
+          )
         : []
     );
 
@@ -357,7 +369,7 @@ createApp({
     // ── Expose to template ───────────────────────────────────────────────────
     return {
       activeTab, selectedTheme, massUnit, wormhole, ships, passes, passForm, shipModal, yamlFileRef,
-      WH_SIZES, whSizeInfo, whSizeLimit, excludedShips,
+      WH_SIZES, whSizeInfo, whSizeLimit, excludedShips, coldOnlyShips,
       usedMass, usedPct,
       massToReduced, massToCritical, massToColMin, massToColMax,
       barFillStyle, barVarianceStyle, markerReducedLeft, markerCriticalLeft, markerTotalLeft,
