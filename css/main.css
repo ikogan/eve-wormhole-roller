@@ -952,6 +952,19 @@ input[type="number"] { -moz-appearance: textfield; }
   margin-top: 2px;
 }
 
+.plan-advance-state-btn {
+  margin-top: 6px;
+  background: transparent;
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  min-height: 28px;
+}
+.plan-advance-state-btn:hover {
+  background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+}
+
 .plan-view-tabs {
   display: flex;
   gap: 0;

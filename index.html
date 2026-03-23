@@ -510,15 +510,14 @@
                 <div v-if="nextPassRow" class="plan-next-label">
                   Next: <strong>{{ nextPassRow.label }}</strong> — {{ fmtMass(nextPassRow.mass) }}
                 </div>
-              </div>
-              <div style="display:flex;align-items:center;gap:8px">
                 <button
                   v-if="nextWhState"
                   @click="advanceWhState"
-                  class="btn btn-sm"
-                  style="border-color:var(--color-warning);color:var(--color-warning)"
+                  class="btn btn-sm plan-advance-state-btn"
                   :title="`Mark wormhole as ${nextWhState}`"
-                >📍 → {{ nextWhState.charAt(0).toUpperCase() + nextWhState.slice(1) }}</button>
+                >⇧ Observed: {{ nextWhState.charAt(0).toUpperCase() + nextWhState.slice(1) }}</button>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
                 <div class="plan-view-tabs" role="group">
                   <button class="pass-type-tab" :class="{ active: activePlanView === 'worst' }" @click="activePlanView = 'worst'">Worst Case</button>
                   <button class="pass-type-tab" :class="{ active: activePlanView === 'best' }" @click="activePlanView = 'best'">Best Case</button>
@@ -616,7 +615,7 @@
                         @click="recordPlanPass(row)"
                         class="btn btn-xs btn-primary plan-pass-record-btn"
                         title="Record this pass"
-                      >↻</button>
+                      >✓</button>
                     </div>
 
                   </template>
