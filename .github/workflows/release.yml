@@ -30,6 +30,7 @@ jobs:
           mkdir -p _site
           # CDN version at root (works on GitHub Pages with internet)
           cp index.html _site/index.html
+          cp -r css js _site/
           # Offline version also available from Pages
           cp eve-wormhole-roller.html _site/eve-wormhole-roller.html
 
