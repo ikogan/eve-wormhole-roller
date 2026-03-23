@@ -447,11 +447,12 @@ createApp({
       return 'Stable';
     }
 
-    function buildDisplayPlan(plan) {
+    function buildDisplayPlan(plan, planTarget) {
       if (!plan || plan.impossible || plan.tooMany) return [];
 
-      const base  = usedMass.value;       // mass already recorded this session
-      const total = wormhole.totalMass;
+      const base   = usedMass.value;       // mass already recorded this session
+      const total  = wormhole.totalMass;   // nominal 100% — used for state thresholds and %
+      const target = planTarget ?? total;  // plan-specific target for remaining countdown
       const thresholds = [
         { key: 'reduced',   label: 'Reduced (50%)',    mass: total * 0.5 },
         { key: 'critical',  label: 'Critical (90%)',   mass: total * 0.9 },
@@ -471,8 +472,8 @@ createApp({
       let prevRunning = 0;
       for (const row of rawRows) {
         const totalThrough = base + row.running;
-        const remaining    = total - totalThrough;
-        const pct          = total > 0 ? (totalThrough / total) * 100 : 0;
+        const remaining    = target - totalThrough;               // vs plan target
+        const pct          = total > 0 ? (totalThrough / total) * 100 : 0; // vs nominal WH mass
         allRows.push({ ...row, totalThrough, remaining, pct, stateAfter: _whStateAfter(pct) });
         for (const thr of thresholds) {
           const rel = thr.mass - base;
@@ -493,8 +494,14 @@ createApp({
 
       return allRows;
     }
-    const displayBestCase  = computed(() => buildDisplayPlan(bestCasePlan.value));
-    const displayWorstCase = computed(() => buildDisplayPlan(worstCasePlan.value));
+    const displayBestCase  = computed(() => buildDisplayPlan(
+      bestCasePlan.value,
+      wormhole.totalMass * (rollingTarget.value === 'critical' ? 0.9 : 1.0)
+    ));
+    const displayWorstCase = computed(() => buildDisplayPlan(
+      worstCasePlan.value,
+      wormhole.totalMass * (rollingTarget.value === 'critical' ? 1.0 : 1.1)
+    ));
 
     // ── Pass row hover tooltip ────────────────────────────────────────────────
     const passTooltip = reactive({ show: false, x: 0, y: 0, row: null });

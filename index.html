@@ -845,7 +845,7 @@
       <span class="prt-val">{{ fmtMass(passTooltip.row.totalThrough) }}</span>
     </div>
     <div class="prt-row">
-      <span class="prt-key">Remaining</span>
+      <span class="prt-key">Remaining to target</span>
       <span class="prt-val" :class="passTooltip.row.remaining < 0 ? 'prt-danger' : ''">
         {{ passTooltip.row.remaining >= 0 ? fmtMass(passTooltip.row.remaining) : fmtMass(-passTooltip.row.remaining) + ' over' }}
       </span>
