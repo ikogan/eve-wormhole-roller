@@ -516,13 +516,6 @@
                   class="btn btn-sm plan-advance-state-btn"
                   :title="`Mark wormhole as ${nextWhState}`"
                 >⇧ Observed: {{ nextWhState.charAt(0).toUpperCase() + nextWhState.slice(1) }}</button>
-                <button
-                  v-if="wormhole.status !== 'stable'"
-                  @click="resetWhState"
-                  class="btn btn-sm plan-advance-state-btn"
-                  title="Reset observed state back to Stable"
-                  style="border-color:var(--color-text-muted);color:var(--color-text-muted);margin-left:4px"
-                >✕ Stable</button>
               </div>
               <div style="display:flex;align-items:center;gap:8px">
                 <div class="plan-view-tabs" role="group">
@@ -579,8 +572,9 @@
                     <div v-if="row.rowType === 'divider'" class="plan-divider">── Remaining Plan ──</div>
 
                     <!-- State change marker -->
-                    <div v-else-if="row.rowType === 'state-marker'" class="plan-threshold-sep is-state">
+                    <div v-else-if="row.rowType === 'state-marker'" class="plan-threshold-sep is-state" style="display:flex;justify-content:space-between;align-items:center">
                       <span>{{ row.label }}</span>
+                      <button @click="removePass(row.id)" class="btn btn-xs btn-danger" style="padding:1px 6px;font-size:0.7rem" :aria-label="`Remove ${row.label}`">✕</button>
                     </div>
 
                     <!-- Threshold separator -->

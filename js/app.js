@@ -366,6 +366,9 @@ createApp({
     function removePass(id) {
       const idx = passes.value.findIndex(p => p.id === id);
       if (idx >= 0) passes.value.splice(idx, 1);
+      // Keep wormhole.status in sync with the most recent remaining state entry
+      const lastState = [...passes.value].reverse().find(p => p.mode === 'state');
+      wormhole.status = lastState?.newStatus ?? 'stable';
     }
 
     function clearPasses() {
@@ -388,11 +391,6 @@ createApp({
       if (!next) return;
       wormhole.status = next;
       passes.value.push({ id: genId(), mode: 'state', newStatus: next, mass: 0 });
-    }
-
-    function resetWhState() {
-      wormhole.status = 'stable';
-      passes.value.push({ id: genId(), mode: 'state', newStatus: 'stable', mass: 0 });
     }
 
     function resetSession() {
@@ -652,7 +650,7 @@ createApp({
       shipModalValid, unitStep,
       whTotalMassInput, draftColdInput, draftHotInput, customMassInput,
       applyTheme, fmtMass, massFits,
-      addPass, removePass, clearPasses, resetSession, recordPlanPass, advanceWhState, nextWhState, resetWhState,
+      addPass, removePass, clearPasses, resetSession, recordPlanPass, advanceWhState, nextWhState,
       addFarSideShip, removeFarSideShip,
       passLabel, threshClass,
       openAddShip, openEditShip, closeShipModal, saveShip, deleteShip, cloneShip,
