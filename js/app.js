@@ -466,21 +466,20 @@ createApp({
       });
       const rawRows = [...rollingRows, ...farRows];
 
-      // Interleave threshold separators at the point each threshold is crossed
+      // Interleave threshold separators after the pass that crosses each threshold
       const allRows = [];
       let prevRunning = 0;
       for (const row of rawRows) {
-        for (const thr of thresholds) {
-          const rel = thr.mass - base; // threshold relative to plan start
-          if (prevRunning < rel && row.running >= rel) {
-            allRows.push({ rowType: 'threshold', label: thr.label, key: thr.key });
-          }
-        }
-        // Enrich each pass row with computed display values
         const totalThrough = base + row.running;
         const remaining    = total - totalThrough;
         const pct          = total > 0 ? (totalThrough / total) * 100 : 0;
         allRows.push({ ...row, totalThrough, remaining, pct, stateAfter: _whStateAfter(pct) });
+        for (const thr of thresholds) {
+          const rel = thr.mass - base;
+          if (prevRunning < rel && row.running >= rel) {
+            allRows.push({ rowType: 'threshold', label: thr.label, key: thr.key });
+          }
+        }
         prevRunning = row.running;
       }
 
