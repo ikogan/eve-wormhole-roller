@@ -44,24 +44,40 @@ var MAX_PLAN_PASSES = 100;
 function buildPlan(options, target) {
   if (target <= 0) return { alreadyCollapsed: true, passes: [], totalMass: 0 };
   if (!options || !options.length) return { impossible: true, passes: [], totalMass: 0, msg: 'No eligible ships for this wormhole size.' };
-  const sorted   = options.slice().sort((a, b) => b.mass - a.mass);
-  const heaviest = sorted[0];
+
+  // Sort heaviest-first; this is the order used for the bulk passes
+  var sorted = options.slice().sort(function(a, b) { return b.mass - a.mass; });
+  var heaviest = sorted[0];
   if (heaviest.mass <= 0) return { impossible: true, passes: [], totalMass: 0, msg: 'All ships have zero mass.' };
-  let cumulative = 0;
-  const plan = [];
-  while (cumulative < target) {
-    // Add a full round trip (2 passes) of the heaviest ship so the plan is
-    // always even — no ship is left stranded on the wrong side
-    plan.push(Object.assign({}, heaviest)); cumulative += heaviest.mass;
-    plan.push(Object.assign({}, heaviest)); cumulative += heaviest.mass;
-    if (plan.length > MAX_PLAN_PASSES) {
-      return { tooMany: true, passCount: plan.length, totalMass: cumulative };
-    }
+
+  // Minimum number of passes provably achievable (lower bound via heaviest ship)
+  var n = Math.ceil(target / heaviest.mass);
+  if (n > MAX_PLAN_PASSES) return { tooMany: true, passCount: n, totalMass: 0 };
+
+  // Fill the first n-1 passes with the heaviest ship to maximise accumulated mass
+  // and therefore minimise what the final pass needs to contribute.
+  var plan = [];
+  var accumulated = 0;
+  for (var i = 0; i < n - 1; i++) {
+    plan.push(Object.assign({}, heaviest));
+    accumulated += heaviest.mass;
   }
-  let running = 0;
+
+  // Final pass: pick the lightest ship whose mass is enough to cross the target.
+  // sorted is heaviest-first, so reverse gives lightest-first for the search.
+  var needed = target - accumulated;
+  var sortedAsc = sorted.slice().reverse();
+  var finalPass = heaviest; // heaviest always qualifies (n * heaviest >= target by construction)
+  for (var j = 0; j < sortedAsc.length; j++) {
+    if (sortedAsc[j].mass >= needed) { finalPass = sortedAsc[j]; break; }
+  }
+  plan.push(Object.assign({}, finalPass));
+  accumulated += finalPass.mass;
+
+  var running = 0;
   return {
     passes: plan.map(function(p) { running += p.mass; return Object.assign({}, p, { running: running }); }),
-    totalMass: cumulative
+    totalMass: accumulated
   };
 }
 self.onmessage = function(e) {
