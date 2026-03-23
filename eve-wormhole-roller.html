@@ -728,6 +728,7 @@
   --shadow-glow:  0 0 18px var(--color-accent-glow);
 }
 
+[data-theme="soe"] {
   --color-bg-primary:    #0c0c18;
   --color-bg-secondary:  #131325;
   --color-bg-tertiary:   #1c1c32;
@@ -1093,10 +1094,20 @@ body {
 }
 
 /* ── Form Elements ────────────────────────────────────────── */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-row .form-label {
+  flex: 0 0 80px;
+  margin: 0;
+}
+
+.toggle-group {
+  display: flex;
+  gap: 4px;
 }
 
 .form-label {
@@ -1219,15 +1230,6 @@ input[type="number"] { -moz-appearance: textfield; }
 .mass-bar-wrap {
   position: relative;
   margin-bottom: 8px;
-}
-
-.mass-bar-labels-top {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.7rem;
-  color: var(--color-text-muted);
-  margin-bottom: 4px;
-  letter-spacing: 0.04em;
 }
 
 .mass-bar-track {
@@ -1355,7 +1357,7 @@ input[type="number"] { -moz-appearance: textfield; }
 .pass-type-tab {
   flex: 1;
   padding: 9px 12px;
-  background: transparent;
+  background: var(--color-bg-secondary);
   border: none;
   color: var(--color-text-secondary);
   font-family: var(--font-ui);
@@ -1367,6 +1369,11 @@ input[type="number"] { -moz-appearance: textfield; }
   transition: all var(--transition);
   min-height: 44px;
   text-align: center;
+}
+
+.pass-type-tab:not(.active):hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
 }
 
 .pass-type-tab + .pass-type-tab {
@@ -1444,110 +1451,6 @@ input[type="number"] { -moz-appearance: textfield; }
   font-family: var(--font-mono);
 }
 
-/* ── Pass History ─────────────────────────────────────────── */
-.pass-history {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  max-height: 360px;
-  overflow-y: auto;
-  padding-right: 2px;
-}
-
-.pass-history::-webkit-scrollbar {
-  width: 4px;
-}
-.pass-history::-webkit-scrollbar-track {
-  background: var(--color-bg-tertiary);
-}
-.pass-history::-webkit-scrollbar-thumb {
-  background: var(--color-border-bright);
-  border-radius: 2px;
-}
-
-.pass-entry {
-  display: grid;
-  grid-template-columns: 28px 1fr auto auto auto;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 10px;
-  background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: 0.82rem;
-  transition: background var(--transition);
-}
-
-.pass-entry:hover {
-  background: var(--color-bg-hover);
-}
-
-.pass-entry.is-custom {
-  border-left: 3px solid var(--color-text-muted);
-}
-
-.pass-num {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--color-text-muted);
-  text-align: right;
-}
-
-.pass-desc {
-  font-weight: 500;
-  color: var(--color-text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.pass-mass {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  color: var(--color-accent);
-  white-space: nowrap;
-}
-
-.pass-running {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--color-text-muted);
-  white-space: nowrap;
-}
-
-/* ── Calculator ───────────────────────────────────────────── */
-.calc-state-summary {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  padding: 12px;
-  background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  margin-bottom: 16px;
-  font-size: 0.82rem;
-}
-
-.calc-state-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.calc-state-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-.calc-state-value {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
 /* ── Calculator Spinner ───────────────────────────────────── */
 .calc-spinner-wrap {
   display: flex;
@@ -1574,40 +1477,6 @@ input[type="number"] { -moz-appearance: textfield; }
 .calc-spinner-label {
   font-size: 0.85rem;
   letter-spacing: 0.03em;
-}
-
-.plans-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.plan-card {
-  background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.plan-card-header {
-  padding: 10px 14px;
-  background: var(--color-bg-secondary);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.plan-card-title {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-accent);
-  margin-bottom: 2px;
-}
-
-.plan-card-subtitle {
-  font-size: 0.7rem;
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
 }
 
 .plan-passes-list {
@@ -1742,6 +1611,9 @@ input[type="number"] { -moz-appearance: textfield; }
 .plan-view-tabs {
   display: flex;
   gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
 .plan-collapse-icon {
@@ -1833,13 +1705,6 @@ input[type="number"] { -moz-appearance: textfield; }
 }
 
 /* ── Setup Tab Layout ─────────────────────────────────────── */
-.setup-grid {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 16px;
-  align-items: start;
-}
-
 /* Default (mobile): column layout for setup/roll content wrappers */
 .setup-tab-content,
 .roll-tab-content {
@@ -1905,16 +1770,6 @@ input[type="number"] { -moz-appearance: textfield; }
 .text-muted   { color: var(--color-text-muted); }
 .font-mono    { font-family: var(--font-mono); }
 
-.section-divider {
-  border: none;
-  border-top: 1px solid var(--color-border);
-  margin: 4px 0;
-}
-
-/* Pass type color indicators in history */
-.pass-desc .hot-label  { color: var(--color-accent-hot);  }
-.pass-desc .cold-label { color: var(--color-accent-cold); }
-
 /* ── Responsive: Tablet and Desktop ───────────────────────── */
 @media (min-width: 768px) {
   .app-main {
@@ -1923,10 +1778,6 @@ input[type="number"] { -moz-appearance: textfield; }
 
   .mass-stats-grid {
     grid-template-columns: repeat(5, 1fr);
-  }
-
-  .plans-grid {
-    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -1984,24 +1835,8 @@ input[type="number"] { -moz-appearance: textfield; }
     padding: 12px;
   }
 
-  .plans-grid {
-    grid-template-columns: 1fr;
-  }
-
   .mass-stats-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .pass-entry {
-    grid-template-columns: 24px 1fr auto auto;
-  }
-
-  .pass-running {
-    display: none;
-  }
-
-  .form-grid {
-    grid-template-columns: 1fr;
   }
 
   .ship-actions {
@@ -2018,13 +1853,6 @@ input[type="number"] { -moz-appearance: textfield; }
   .hc-btn {
     padding: 0 8px;
     min-width: 55px;
-  }
-}
-
-/* ── Tablet landscape: two-column roll tab ────────────────── */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .plans-grid {
-    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -2143,7 +1971,7 @@ input[type="number"] { -moz-appearance: textfield; }
 }
 
 /* ── Transitions for theme switches ──────────────────────── */
-body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
+body, .card, .app-header, .tab-nav, .modal {
   transition:
     background-color var(--transition),
     border-color var(--transition),
@@ -2213,24 +2041,6 @@ body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
   color: var(--color-text-muted);
   font-weight: 400;
 }
-
-.far-side-calc-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 6px;
-}
-
-.far-side-calc-item {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 2px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-
-.far-side-calc-label { color: var(--color-text-primary); }
-.far-side-calc-mass  { color: var(--color-text-muted); font-family: monospace; }
 
 /* ── Form hint (read-only display value in form rows) ─────── */
 .form-hint {
@@ -2800,18 +2610,10 @@ body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
                   :title="`Mark wormhole as ${nextWhState}`"
                 >⇧ Observed: {{ nextWhState.charAt(0).toUpperCase() + nextWhState.slice(1) }}</button>
               </div>
-              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:8px">
                 <div class="plan-view-tabs" role="group">
-                  <button class="pass-type-tab" :class="{ active: planViewMode === 'remaining' }" @click="planViewMode = 'remaining'">From Here</button>
-                  <button class="pass-type-tab" :class="{ active: planViewMode !== 'remaining' }" @click="planViewMode = planViewMode === 'remaining' ? 'full' : planViewMode">Full Plan</button>
-                </div>
-                <div v-if="planViewMode !== 'remaining'" class="plan-view-tabs" role="group">
-                  <button class="pass-type-tab" :class="{ active: planViewMode === 'full' }" @click="planViewMode = 'full'" title="Ignore all recorded passes and state changes">No State</button>
-                  <button class="pass-type-tab" :class="{ active: planViewMode === 'full-state' }" @click="planViewMode = 'full-state'" title="Ignore passes, but account for observed state">With State</button>
-                </div>
-                <div class="plan-view-tabs" role="group">
-                  <button class="pass-type-tab" :class="{ active: activePlanView === 'worst' }" @click="activePlanView = 'worst'">Worst</button>
-                  <button class="pass-type-tab" :class="{ active: activePlanView === 'best' }" @click="activePlanView = 'best'">Best</button>
+                  <button class="pass-type-tab" :class="{ active: activePlanView === 'worst' }" @click="activePlanView = 'worst'">⬆ Max Mass</button>
+                  <button class="pass-type-tab" :class="{ active: activePlanView === 'best' }" @click="activePlanView = 'best'">⬇ Min Mass</button>
                 </div>
                 <button v-if="passes.length > 0" @click="clearPasses" class="btn btn-danger btn-sm">Clear</button>
               </div>
@@ -2922,7 +2724,7 @@ body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
                     Far side: <strong>{{ fmtMass(farSideMass) }}</strong>
                   </span>
                   <span class="plan-footer-stat">
-                    Needed ({{ activePlanView }}): <strong>{{ fmtMass(activePlanView === 'best' ? massToColMin : massToColMax) }}</strong>
+                    Needed ({{ activePlanView === 'best' ? '⬇ min' : '⬆ max' }}): <strong>{{ fmtMass(activePlanView === 'best' ? massToColMin : massToColMax) }}</strong>
                   </span>
                 </div>
               </template>
@@ -3143,12 +2945,8 @@ function buildPlan(options, target) {
 self.onmessage = function(e) {
   var d = e.data;
   self.postMessage({
-    remainingBest:  buildPlan(d.options, d.massToColMin),
-    remainingWorst: buildPlan(d.options, d.massToColMax),
-    fullBest:       buildPlan(d.options, d.fullMassMin),
-    fullWorst:      buildPlan(d.options, d.fullMassMax),
-    stateBest:      buildPlan(d.options, d.stateMassMin),
-    stateWorst:     buildPlan(d.options, d.stateMassMax),
+    bestCasePlan:  buildPlan(d.options, d.massToColMin),
+    worstCasePlan: buildPlan(d.options, d.massToColMax),
   });
 };
 `;
@@ -3385,23 +3183,15 @@ createApp({
         : []
     );
 
-    const worstCasePlan      = ref(null);
-    const bestCasePlan       = ref(null);
-    const fullWorstCasePlan  = ref(null);
-    const fullBestCasePlan   = ref(null);
-    const stateWorstCasePlan = ref(null);
-    const stateBestCasePlan  = ref(null);
+    const worstCasePlan = ref(null);
+    const bestCasePlan  = ref(null);
     const calcBusy      = ref(false);
     const calcDirty     = ref(false);
 
-    // Receive results back from the worker — all 3 plan pairs at once
+    // Receive results back from the worker
     _calcWorker.onmessage = (e) => {
-      worstCasePlan.value      = e.data.remainingWorst;
-      bestCasePlan.value       = e.data.remainingBest;
-      fullWorstCasePlan.value  = e.data.fullWorst;
-      fullBestCasePlan.value   = e.data.fullBest;
-      stateWorstCasePlan.value = e.data.stateWorst;
-      stateBestCasePlan.value  = e.data.stateBest;
+      worstCasePlan.value = e.data.worstCasePlan;
+      bestCasePlan.value  = e.data.bestCasePlan;
       calcBusy.value = false;
       if (calcDirty.value) triggerCalc();
     };
@@ -3411,21 +3201,11 @@ createApp({
       calcBusy.value      = true;
       worstCasePlan.value = null;
       bestCasePlan.value  = null;
-      fullWorstCasePlan.value  = null;
-      fullBestCasePlan.value   = null;
-      stateWorstCasePlan.value = null;
-      stateBestCasePlan.value  = null;
       calcDirty.value     = false;
-      const totalMin = wormhole.totalMass * (rollingTarget.value === 'critical' ? 0.9 : 1.0);
-      const totalMax = wormhole.totalMass * (rollingTarget.value === 'critical' ? 1.0 : 1.1);
       _calcWorker.postMessage({
         options:      passOptions.value,
         massToColMin: effectiveMassToColMin.value,
         massToColMax: effectiveMassToColMax.value,
-        fullMassMin:  Math.max(0, totalMin - farSideMass.value),
-        fullMassMax:  Math.max(0, totalMax - farSideMass.value),
-        stateMassMin: Math.max(0, totalMin - statusMinUsed.value - farSideMass.value),
-        stateMassMax: Math.max(0, totalMax - statusMinUsed.value - farSideMass.value),
       });
     }
 
@@ -3588,9 +3368,6 @@ createApp({
       event.target.value = '';
     }
 
-    function threshClass(val) { return val <= 0 ? 'text-success' : ''; }
-
-    // ── Display Plans (rolling passes + far-side return rows merged) ──────────
     function _whStateAfter(pct) {
       if (pct >= 100) return 'Collapsed ⊗';
       if (pct >= 90)  return 'Critical ⚠';
@@ -3598,10 +3375,10 @@ createApp({
       return 'Stable';
     }
 
-    function buildDisplayPlan(plan, planTarget, base = null) {
+    function buildDisplayPlan(plan, planTarget) {
       if (!plan || plan.impossible || plan.tooMany) return [];
 
-      const b      = base ?? effectiveUsedMass.value; // recorded passes + state-implied minimum
+      const b      = effectiveUsedMass.value; // recorded passes + state-implied minimum
       const total  = wormhole.totalMass;   // nominal 100% — used for state thresholds and %
       const target = planTarget ?? total;  // plan-specific target for remaining countdown
       const thresholds = [
@@ -3647,70 +3424,40 @@ createApp({
     }
 
     // ── Unified Plan (done passes + planned passes merged) ────────────────────
-    // planViewMode:
-    //   'remaining'   — show completed passes + plan for remaining mass (default)
-    //   'full'        — full plan ignoring passes and state
-    //   'full-state'  — full plan ignoring passes but accounting for observed state
     const activePlanView = ref('worst');
-    const planViewMode   = ref('remaining');
 
-    // Which worker-result plans to use for the current view mode
-    const currentBestPlan = computed(() => {
-      if (planViewMode.value === 'full')       return fullBestCasePlan.value;
-      if (planViewMode.value === 'full-state') return stateBestCasePlan.value;
-      return bestCasePlan.value;
-    });
-    const currentWorstPlan = computed(() => {
-      if (planViewMode.value === 'full')       return fullWorstCasePlan.value;
-      if (planViewMode.value === 'full-state') return stateWorstCasePlan.value;
-      return worstCasePlan.value;
-    });
-
-    // The display-plan base offset for the current view mode
-    const planBase = computed(() => {
-      if (planViewMode.value === 'full')       return 0;
-      if (planViewMode.value === 'full-state') return statusMinUsed.value;
-      return null; // null → buildDisplayPlan uses effectiveUsedMass
-    });
-
-    function buildFullDisplayPlan(plan, planTarget, base) {
+    function buildFullDisplayPlan(plan, planTarget) {
       const result = [];
 
-      // In 'remaining' mode, show completed passes above the plan
-      if (planViewMode.value === 'remaining') {
-        for (const p of passesWithRunning.value) {
-          if (p.mode === 'state') {
-            result.push({ rowType: 'state-marker', id: p.id, label: passLabel(p), newStatus: p.newStatus });
-          } else {
-            const pct = wormhole.totalMass > 0 ? (p.running / wormhole.totalMass) * 100 : 0;
-            result.push({
-              rowType: 'done',
-              id: p.id,
-              label: passLabel(p),
-              mass: p.mass,
-              running: p.running,
-              num: p.num,
-              totalThrough: p.running,
-              pct,
-              stateAfter: _whStateAfter(pct),
-            });
-          }
+      for (const p of passesWithRunning.value) {
+        if (p.mode === 'state') {
+          result.push({ rowType: 'state-marker', id: p.id, label: passLabel(p), newStatus: p.newStatus });
+        } else {
+          const pct = wormhole.totalMass > 0 ? (p.running / wormhole.totalMass) * 100 : 0;
+          result.push({
+            rowType: 'done',
+            id: p.id,
+            label: passLabel(p),
+            mass: p.mass,
+            running: p.running,
+            num: p.num,
+            totalThrough: p.running,
+            pct,
+            stateAfter: _whStateAfter(pct),
+          });
         }
       }
 
-      const plannedRows = buildDisplayPlan(plan, planTarget, base);
+      const plannedRows = buildDisplayPlan(plan, planTarget);
 
-      if (planViewMode.value === 'remaining') {
-        const hasCompleted = result.some(r => r.rowType === 'done');
-        const hasPlanned   = plannedRows.some(r => r.rowType !== 'threshold');
-        if (hasCompleted && hasPlanned) result.push({ rowType: 'divider' });
-      }
+      const hasCompleted = result.some(r => r.rowType === 'done');
+      const hasPlanned   = plannedRows.some(r => r.rowType !== 'threshold');
+      if (hasCompleted && hasPlanned) result.push({ rowType: 'divider' });
 
       let foundNext = false;
       for (const row of plannedRows) {
         if (!foundNext && row.rowType !== 'threshold') {
-          // Only mark isNext (✓ record button) in 'remaining' mode
-          result.push({ ...row, isNext: planViewMode.value === 'remaining' });
+          result.push({ ...row, isNext: true });
           foundNext = true;
         } else {
           result.push(row);
@@ -3721,20 +3468,18 @@ createApp({
     }
 
     const displayFullBestCase = computed(() => buildFullDisplayPlan(
-      currentBestPlan.value,
-      wormhole.totalMass * (rollingTarget.value === 'critical' ? 0.9 : 1.0),
-      planBase.value
+      bestCasePlan.value,
+      wormhole.totalMass * (rollingTarget.value === 'critical' ? 0.9 : 1.0)
     ));
     const displayFullWorstCase = computed(() => buildFullDisplayPlan(
-      currentWorstPlan.value,
-      wormhole.totalMass * (rollingTarget.value === 'critical' ? 1.0 : 1.1),
-      planBase.value
+      worstCasePlan.value,
+      wormhole.totalMass * (rollingTarget.value === 'critical' ? 1.0 : 1.1)
     ));
     const activePlanDisplay = computed(() =>
       activePlanView.value === 'best' ? displayFullBestCase.value : displayFullWorstCase.value
     );
     const activePlan = computed(() =>
-      activePlanView.value === 'best' ? currentBestPlan.value : currentWorstPlan.value
+      activePlanView.value === 'best' ? bestCasePlan.value : worstCasePlan.value
     );
     const nextPassRow = computed(() => {
       const display = activePlanDisplay.value;
@@ -3762,7 +3507,7 @@ createApp({
       farSideShips, farSideForm, farSideMass, farSideSelectedShip, farSideShipMass,
       canSubmitFarSide, farSideCustomMassInput, farSideAloneCollapses, farSideOverCollapses,
       effectiveMassToColMin, effectiveMassToColMax,
-      rollingTarget, planViewMode,
+      rollingTarget,
       activePlanView, activePlanDisplay, activePlan, nextPassRow,
       passTooltip, showPassTooltip, hidePassTooltip,
       barFillStyle, barVarianceStyle, markerReducedLeft, markerCriticalLeft, markerTotalLeft,
@@ -3773,7 +3518,7 @@ createApp({
       applyTheme, fmtMass, massFits,
       addPass, removePass, clearPasses, resetSession, recordPlanPass, advanceWhState, nextWhState,
       addFarSideShip, removeFarSideShip,
-      passLabel, threshClass,
+      passLabel,
       openAddShip, openEditShip, closeShipModal, saveShip, deleteShip, cloneShip,
       exportYAML, triggerImport, handleYAMLFile,
     };
