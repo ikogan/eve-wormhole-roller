@@ -517,7 +517,16 @@
                   :title="`Mark wormhole as ${nextWhState}`"
                 >⇧ Observed: {{ nextWhState.charAt(0).toUpperCase() + nextWhState.slice(1) }}</button>
               </div>
-              <div style="display:flex;align-items:center;gap:8px">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+                <label class="plan-pilots-control">
+                  <span class="plan-pilots-label">Pilots</span>
+                  <input
+                    v-model.number="numPilots"
+                    type="number" min="1" max="20" step="1"
+                    class="input plan-pilots-input"
+                    aria-label="Number of rolling pilots"
+                  />
+                </label>
                 <div class="plan-view-tabs" role="group">
                   <button class="pass-type-tab" :class="{ active: activePlanView === 'worst' }" @click="activePlanView = 'worst'">⬆ Max Mass</button>
                   <button class="pass-type-tab" :class="{ active: activePlanView === 'best' }" @click="activePlanView = 'best'">⬇ Min Mass</button>
@@ -557,32 +566,31 @@
               </div>
 
               <template v-else-if="activePlan">
-                <!-- Already collapsed / impossible / tooMany alerts -->
+                <!-- Already collapsed / impossible alerts -->
                 <div v-if="activePlan.alreadyCollapsed" class="plan-alert is-collapsed">
                   ✓ Recorded passes{{ farSideShips.length ? ' + far side returns' : '' }} will collapse the wormhole.
                 </div>
                 <div v-else-if="activePlan.impossible" class="plan-alert">{{ activePlan.msg }}</div>
-                <div v-else-if="activePlan.tooMany" class="plan-alert">⚠ Too many passes required ({{ activePlan.passCount }}+). Use a heavier ship.</div>
 
-                <!-- Unified pass list: done + divider + planned -->
+                <!-- Unified pass list: done + divider + planned groups -->
                 <div class="plan-passes-list" role="list">
                   <template v-for="(row, i) in activePlanDisplay" :key="i">
 
                     <!-- Divider between completed and planned -->
                     <div v-if="row.rowType === 'divider'" class="plan-divider">── Remaining Plan ──</div>
 
-                    <!-- State change marker -->
+                    <!-- State change marker (recorded observation) -->
                     <div v-else-if="row.rowType === 'state-marker'" class="plan-threshold-sep is-state" style="display:flex;justify-content:space-between;align-items:center">
                       <span>{{ row.label }}</span>
                       <button @click="removePass(row.id)" class="btn btn-xs btn-danger" style="padding:1px 6px;font-size:0.7rem" :aria-label="`Remove ${row.label}`">✕</button>
                     </div>
 
-                    <!-- Threshold separator -->
+                    <!-- Threshold separator (state transition point within plan) -->
                     <div v-else-if="row.rowType === 'threshold'" :class="['plan-threshold-sep', 'is-' + row.key]">
                       <span>{{ row.label }}</span>
                     </div>
 
-                    <!-- Done pass (from history) -->
+                    <!-- Done pass (recorded) -->
                     <div v-else-if="row.rowType === 'done'"
                       class="plan-pass-item is-done"
                       role="listitem"
@@ -594,22 +602,44 @@
                       <button @click="removePass(row.id)" class="btn btn-xs btn-danger" :aria-label="`Remove pass ${row.label}`" style="margin-left:4px">✕</button>
                     </div>
 
-                    <!-- Planned pass (rolling or far-side) -->
-                    <div v-else
-                      :class="['plan-pass-item', { 'is-far-side': row.rowType === 'far-side', 'is-final': row.isFinal, 'is-next': row.isNext }]"
+                    <!-- Group header (e.g. "Group 1 · 2 Pilots") -->
+                    <div v-else-if="row.rowType === 'group-header'" class="plan-group-header">
+                      <span class="plan-group-num">{{ row.groupType === 'final' ? 'Final Group' : 'Group ' + row.groupNum }}</span>
+                      <span class="plan-group-pilots">{{ row.pilotCount }} {{ row.pilotCount === 1 ? 'Pilot' : 'Pilots' }}</span>
+                    </div>
+
+                    <!-- Phase header (→ Enter / ← Scouts Return / ← Return) -->
+                    <div v-else-if="row.rowType === 'phase-header'"
+                      :class="['plan-phase-header', 'is-' + (row.direction === 'enter' ? 'enter' : 'return')]"
+                    >
+                      <span v-if="row.direction === 'enter'">→ Enter · {{ row.count }} {{ row.count === 1 ? 'pilot' : 'pilots' }}</span>
+                      <span v-else-if="row.direction === 'scout-return'">← Scouts Return · {{ row.count }}</span>
+                      <span v-else>← Return · {{ row.count }} {{ row.count === 1 ? 'pilot' : 'pilots' }}</span>
+                    </div>
+
+                    <!-- Planned rolling pass -->
+                    <div v-else-if="row.rowType === 'rolling'"
+                      :class="['plan-pass-item', {
+                        'is-enter':  row.direction === 'enter',
+                        'is-return': row.direction === 'return',
+                        'is-scout':  row.isScout,
+                        'is-final':  row.isFinal,
+                        'is-next':   row.isNext,
+                      }]"
                       role="listitem"
                       @mouseenter="showPassTooltip($event, row)"
                       @mouseleave="hidePassTooltip"
                     >
-                      <span class="plan-pass-n">{{ row.rowType === 'far-side' ? '⬅' : row.num }}</span>
+                      <span class="plan-pass-dir">{{ row.direction === 'enter' ? '→' : '←' }}</span>
                       <span class="plan-pass-label">
                         {{ row.label }}
+                        <span v-if="row.isScout" class="plan-scout-badge">SCOUT</span>
                         <span v-if="row.isNext" class="plan-next-badge">NEXT</span>
                         <span v-if="row.isFinal" class="plan-collapse-icon" :title="rollingTarget === 'critical' ? 'Wormhole enters critical state' : 'Wormhole collapses'">⊗</span>
                       </span>
                       <span class="plan-pass-mass">{{ fmtMass(row.mass) }}</span>
-                      <span class="plan-pass-remaining" :class="{ 'is-over': row.remaining < 0 }">
-                        {{ row.remaining > 0 ? fmtMass(row.remaining) : '—' }}
+                      <span class="plan-pass-pct" :class="row.pct >= 100 ? 'is-collapsed' : row.pct >= 90 ? 'is-critical' : row.pct >= 50 ? 'is-reduced' : ''">
+                        {{ row.pct.toFixed(0) }}%
                       </span>
                       <button
                         v-if="row.isNext"
@@ -623,12 +653,12 @@
                 </div>
 
                 <!-- Plan footer stats -->
-                <div v-if="!activePlan.alreadyCollapsed && activePlanDisplay.length" class="plan-footer">
-                  <span v-if="activePlan.passes && activePlan.passes.length" class="plan-footer-stat">
-                    Rolling: <strong>{{ fmtMass(activePlan.totalMass) }}</strong>
+                <div v-if="!activePlan.alreadyCollapsed && activePlan.totalPasses" class="plan-footer">
+                  <span class="plan-footer-stat">
+                    Passes: <strong>{{ activePlan.totalPasses }}</strong>
                   </span>
-                  <span v-if="farSideShips.length" class="plan-footer-stat">
-                    Far side: <strong>{{ fmtMass(farSideMass) }}</strong>
+                  <span v-if="activePlan.totalMass" class="plan-footer-stat">
+                    Rolling: <strong>{{ fmtMass(activePlan.totalMass) }}</strong>
                   </span>
                   <span class="plan-footer-stat">
                     Needed ({{ activePlanView === 'best' ? '⬇ min' : '⬆ max' }}): <strong>{{ fmtMass(activePlanView === 'best' ? massToColMin : massToColMax) }}</strong>
@@ -732,8 +762,10 @@
     </div>
     <div class="prt-row">
       <span class="prt-key">Remaining to target</span>
-      <span class="prt-val" :class="passTooltip.row.remaining < 0 ? 'prt-danger' : ''">
-        {{ passTooltip.row.remaining >= 0 ? fmtMass(passTooltip.row.remaining) : fmtMass(-passTooltip.row.remaining) + ' over' }}
+      <span class="prt-val" :class="passTooltip.row.remaining != null && passTooltip.row.remaining < 0 ? 'prt-danger' : ''">
+        {{ passTooltip.row.remaining == null ? '—'
+           : passTooltip.row.remaining >= 0 ? fmtMass(passTooltip.row.remaining)
+           : fmtMass(-passTooltip.row.remaining) + ' over' }}
       </span>
     </div>
     <div class="prt-row">

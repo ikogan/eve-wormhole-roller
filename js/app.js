@@ -3,13 +3,14 @@
 const { createApp, ref, computed, watch, reactive } = Vue;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const STORAGE_SHIPS    = 'eve-whr-ships-v1';
-const STORAGE_THEME    = 'eve-whr-theme-v1';
-const STORAGE_WH       = 'eve-whr-wormhole-v1';
-const STORAGE_UNIT     = 'eve-whr-unit-v1';
-const STORAGE_PASSES   = 'eve-whr-passes-v1';
-const STORAGE_FAR_SIDE        = 'eve-whr-far-side-v1';
-const STORAGE_ROLLING_TARGET  = 'eve-whr-rolling-target-v1';
+const STORAGE_SHIPS          = 'eve-whr-ships-v1';
+const STORAGE_THEME          = 'eve-whr-theme-v1';
+const STORAGE_WH             = 'eve-whr-wormhole-v1';
+const STORAGE_UNIT           = 'eve-whr-unit-v1';
+const STORAGE_PASSES         = 'eve-whr-passes-v1';
+const STORAGE_FAR_SIDE       = 'eve-whr-far-side-v1';
+const STORAGE_ROLLING_TARGET = 'eve-whr-rolling-target-v1';
+const STORAGE_PILOTS         = 'eve-whr-pilots-v1';
 
 // Individual ship mass limits per wormhole size (stored internally in kg)
 const WH_SIZES = [
@@ -34,57 +35,122 @@ function _fmt(n) {
   return Number(n).toFixed(0);
 }
 
-// ─── Optimal Pass Calculator (Web Worker) ─────────────────────────────────────
+// ─── Multi-Pilot Pass Calculator (Web Worker) ─────────────────────────────────
 /**
- * buildPlan logic lives inside the worker source string so it runs off the main
- * thread. Using a Blob URL keeps the app single-file and compatible with file://.
+ * Algorithm: given N pilots, K "heavy cold" round-trips are needed before the
+ * final hot pass. Decompose K = M*N + (finalPilots-1): M full N-pilot bulk rounds
+ * plus (finalPilots-1) extra pilots in the final group. This minimises passes
+ * while guaranteeing every ship ends on the home side.
+ *
+ * Key constraint: the cold enter + scout returns must NOT collapse the wormhole
+ * by themselves — only the final hot return should collapse it.
+ *
+ * Worker runs off the main thread via a Blob URL (works on file:// and http://).
  */
 const CALC_WORKER_SRC = `
-var MAX_PLAN_PASSES = 100;
-function buildPlan(options, target) {
-  if (target <= 0) return { alreadyCollapsed: true, passes: [], totalMass: 0 };
-  if (!options || !options.length) return { impossible: true, passes: [], totalMass: 0, msg: 'No eligible ships for this wormhole size.' };
+var MAX_GROUPS = 60;
 
-  // Sort heaviest-first; this is the order used for the bulk passes
-  var sorted = options.slice().sort(function(a, b) { return b.mass - a.mass; });
-  var heaviest = sorted[0];
-  if (heaviest.mass <= 0) return { impossible: true, passes: [], totalMass: 0, msg: 'All ships have zero mass.' };
+// targetCapacity: the specific WH capacity we're planning for (either min or max).
+function buildMultiPilotPlan(mpOptions, numPilots, scoutMasses, targetCapacity) {
+  if (targetCapacity <= 0) return { alreadyCollapsed: true, groups: [] };
+  if (!mpOptions || !mpOptions.length) return { impossible: true, msg: 'No eligible ships for this wormhole size.' };
 
-  // Minimum number of passes provably achievable (lower bound via heaviest ship)
-  var n = Math.ceil(target / heaviest.mass);
-  if (n > MAX_PLAN_PASSES) return { tooMany: true, passCount: n, totalMass: 0 };
+  // Sort ships by cold mass descending; heaviest ship does bulk round-trips
+  var sorted = mpOptions.slice().sort(function(a, b) { return b.coldMass - a.coldMass; });
+  var heavy = sorted[0];
+  if (!heavy.coldMass) return { impossible: true, msg: 'All ships have zero cold mass.' };
 
-  // Fill the first n-1 passes with the heaviest ship to maximise accumulated mass
-  // and therefore minimise what the final pass needs to contribute.
-  var plan = [];
-  var accumulated = 0;
-  for (var i = 0; i < n - 1; i++) {
-    plan.push(Object.assign({}, heaviest));
-    accumulated += heaviest.mass;
+  var scoutMassTotal = 0;
+  for (var s = 0; s < scoutMasses.length; s++) scoutMassTotal += scoutMasses[s];
+
+  var heavyColdRT = 2 * heavy.coldMass; // mass of one heavy-ship cold round trip
+
+  // Try each ship as the final (hot-return) ship, heaviest first
+  for (var si = 0; si < sorted.length; si++) {
+    var finalShip = sorted[si];
+    if (!finalShip.hotMass) continue; // must be able to go hot for the final pass
+
+    // Total consumed = K * heavyColdRT + finalShip.coldMass + scoutMassTotal + finalShip.hotMass
+    // "before hot" = K * heavyColdRT + finalShip.coldMass + scoutMassTotal
+    // Constraint 1: before hot < targetCapacity (cold enter + scouts don't collapse WH alone)
+    // Constraint 2: before hot + finalShip.hotMass >= targetCapacity (hot return collapses WH)
+    var fixedMass = finalShip.coldMass + scoutMassTotal + finalShip.hotMass;
+    var beforeHotBase = finalShip.coldMass + scoutMassTotal;
+
+    // If the cold enter + scouts alone already >= targetCapacity, skip this ship
+    if (beforeHotBase >= targetCapacity) continue;
+
+    // kMin: minimum K such that total >= targetCapacity (constraint 2)
+    var kMin = fixedMass >= targetCapacity ? 0 : Math.ceil((targetCapacity - fixedMass) / heavyColdRT);
+
+    // kMax: maximum K such that before-hot < targetCapacity (constraint 1)
+    // K * heavyColdRT + beforeHotBase < targetCapacity → K < (targetCapacity - beforeHotBase) / heavyColdRT
+    // Using -1 (one kg) to make the strict inequality safe with floating point
+    var kMax = Math.floor((targetCapacity - beforeHotBase - 1) / heavyColdRT);
+
+    if (kMin <= kMax && kMax >= 0) {
+      var result = _makeGroups(kMin, numPilots, heavy, finalShip, scoutMasses);
+      if (result.totalGroups <= MAX_GROUPS) return result;
+    }
   }
 
-  // Final pass: pick the lightest ship whose mass is enough to cross the target.
-  // sorted is heaviest-first, so reverse gives lightest-first for the search.
-  var needed = target - accumulated;
-  var sortedAsc = sorted.slice().reverse();
-  var finalPass = heaviest; // heaviest always qualifies (n * heaviest >= target by construction)
-  for (var j = 0; j < sortedAsc.length; j++) {
-    if (sortedAsc[j].mass >= needed) { finalPass = sortedAsc[j]; break; }
-  }
-  plan.push(Object.assign({}, finalPass));
-  accumulated += finalPass.mass;
+  return { impossible: true, msg: 'No valid plan found. Try adding ships with different mass values or more pilots.' };
+}
 
-  var running = 0;
+function _makeGroups(K, numPilots, heavyShip, finalShip, scoutMasses) {
+  var M = Math.floor(K / numPilots);
+  var finalPilots = (K % numPilots) + 1; // 1..numPilots pilots in the final group
+  var groups = [];
+
+  // M full bulk groups: all N pilots do a cold round-trip
+  for (var i = 0; i < M; i++) {
+    var enters = [], returns = [];
+    for (var p = 0; p < numPilots; p++) {
+      enters.push({ name: heavyShip.name, mass: heavyShip.coldMass, passType: 'cold', direction: 'enter' });
+      returns.push({ name: heavyShip.name, mass: heavyShip.coldMass, passType: 'cold', direction: 'return' });
+    }
+    groups.push({ type: 'bulk', pilotCount: numPilots, enters: enters, scoutReturns: [], returns: returns });
+  }
+
+  // Final group: (finalPilots-1) heavy cold round-trips + 1 final-ship cold enter,
+  // then scouts return, then (finalPilots-1) heavy cold returns + 1 final-ship hot return
+  var fgEnters = [], fgReturns = [], fgScouts = [];
+  for (var p = 0; p < finalPilots - 1; p++) {
+    fgEnters.push({ name: heavyShip.name, mass: heavyShip.coldMass, passType: 'cold', direction: 'enter' });
+    fgReturns.push({ name: heavyShip.name, mass: heavyShip.coldMass, passType: 'cold', direction: 'return' });
+  }
+  fgEnters.push({ name: finalShip.name, mass: finalShip.coldMass, passType: 'cold', direction: 'enter' });
+
+  for (var s = 0; s < scoutMasses.length; s++) {
+    fgScouts.push({ name: 'Scout', mass: scoutMasses[s], passType: 'cold', direction: 'return', isScout: true });
+  }
+
+  // The very last pass: final ship returns hot to guarantee collapse
+  fgReturns.push({ name: finalShip.name, mass: finalShip.hotMass, passType: 'hot', direction: 'return', isFinal: true });
+
+  var scoutMassTotal = 0;
+  for (var s = 0; s < scoutMasses.length; s++) scoutMassTotal += scoutMasses[s];
+  var totalMass = K * 2 * heavyShip.coldMass + finalShip.coldMass + scoutMassTotal + finalShip.hotMass;
+  // passes: bulk round-trips + final group enters + scouts + returns (incl. final hot)
+  var totalPasses = M * 2 * numPilots + fgEnters.length + fgScouts.length + fgReturns.length;
+
+  groups.push({ type: 'final', pilotCount: finalPilots, enters: fgEnters, scoutReturns: fgScouts, returns: fgReturns });
+
   return {
-    passes: plan.map(function(p) { running += p.mass; return Object.assign({}, p, { running: running }); }),
-    totalMass: accumulated
+    groups: groups,
+    totalMass: totalMass,
+    totalPasses: totalPasses,
+    totalGroups: groups.length,
   };
 }
+
 self.onmessage = function(e) {
   var d = e.data;
+  // Best case: plan for minimum WH capacity (fewer passes if WH needs less mass)
+  // Worst case: plan to guarantee collapse even at maximum variance
   self.postMessage({
-    bestCasePlan:  buildPlan(d.options, d.massToColMin),
-    worstCasePlan: buildPlan(d.options, d.massToColMax),
+    bestCasePlan:  buildMultiPilotPlan(d.mpOptions, d.numPilots, d.scoutMasses, d.massToColMin),
+    worstCasePlan: buildMultiPilotPlan(d.mpOptions, d.numPilots, d.scoutMasses, d.massToColMax),
   });
 };
 `;
@@ -114,6 +180,7 @@ createApp({
     const passes     = ref(JSON.parse(localStorage.getItem(STORAGE_PASSES)   || '[]'));
     const farSideShips = ref(JSON.parse(localStorage.getItem(STORAGE_FAR_SIDE) || '[]'));
     const rollingTarget = ref(localStorage.getItem(STORAGE_ROLLING_TARGET) || 'collapse'); // 'collapse' | 'critical'
+    const numPilots  = ref(Number(localStorage.getItem(STORAGE_PILOTS)) || 2);
 
     const passForm = reactive({
       mode:       'ship',  // 'ship' | 'custom'
@@ -145,6 +212,7 @@ createApp({
     watch(wormhole, val => localStorage.setItem(STORAGE_WH,    JSON.stringify({ ...val })), { deep: true });
     watch(massUnit, val => localStorage.setItem(STORAGE_UNIT, val));
     watch(rollingTarget, val => localStorage.setItem(STORAGE_ROLLING_TARGET, val));
+    watch(numPilots, val => localStorage.setItem(STORAGE_PILOTS, String(val)));
 
     // ── Theme ────────────────────────────────────────────────────────────────
     function applyTheme() {
@@ -295,6 +363,7 @@ createApp({
     }
 
     // ── Calculator ───────────────────────────────────────────────────────────
+    // passOptions: flat list for the add-pass form dropdowns (unchanged)
     const passOptions = computed(() => {
       const opts = [];
       for (const ship of ships.value) {
@@ -303,6 +372,13 @@ createApp({
       }
       return opts;
     });
+
+    // mpShipOptions: ship objects for the multi-pilot worker (need both masses)
+    const mpShipOptions = computed(() =>
+      ships.value
+        .filter(s => (s.coldMass || 0) > 0 && (s.hotMass || 0) > 0 && massFits(s.coldMass || 0))
+        .map(s => ({ id: s.id, name: s.name, coldMass: s.coldMass, hotMass: s.hotMass }))
+    );
 
     // Ships completely excluded by size (neither cold nor hot fits)
     const excludedShips = computed(() =>
@@ -341,13 +417,15 @@ createApp({
       bestCasePlan.value  = null;
       calcDirty.value     = false;
       _calcWorker.postMessage({
-        options:      passOptions.value,
+        mpOptions:    mpShipOptions.value,
+        numPilots:    numPilots.value,
+        scoutMasses:  farSideShips.value.map(f => f.mass),
         massToColMin: effectiveMassToColMin.value,
         massToColMax: effectiveMassToColMax.value,
       });
     }
 
-    watch([passOptions, massToColMin, massToColMax, effectiveUsedMass], () => triggerCalc());
+    watch([mpShipOptions, massToColMin, massToColMax, effectiveUsedMass, numPilots], () => triggerCalc());
     watch(farSideShips, () => triggerCalc(), { deep: true });
     watch(activeTab, tab => { if (tab === 'roll') triggerCalc(); });
 
@@ -513,58 +591,93 @@ createApp({
       return 'Stable';
     }
 
-    function buildDisplayPlan(plan, planTarget) {
-      if (!plan || plan.impossible || plan.tooMany) return [];
+    function _insertThresholds(rows, thresholds, base, prevRunning, curRunning) {
+      for (const thr of thresholds) {
+        const rel = thr.mass - base;
+        if (prevRunning < rel && curRunning >= rel) {
+          rows.push({ rowType: 'threshold', label: thr.label, key: thr.key });
+        }
+      }
+    }
 
-      const b      = effectiveUsedMass.value; // recorded passes + state-implied minimum
-      const total  = wormhole.totalMass;   // nominal 100% — used for state thresholds and %
-      const target = planTarget ?? total;  // plan-specific target for remaining countdown
+    // Build flat display rows from a grouped multi-pilot plan.
+    // Returns rows of types: group-header, phase-header, rolling, threshold.
+    function buildGroupedDisplayPlan(plan) {
+      if (!plan || plan.impossible || plan.alreadyCollapsed) return [];
+      if (!plan.groups || !plan.groups.length) return [];
+
+      const b      = effectiveUsedMass.value;
+      const total  = wormhole.totalMass;
       const thresholds = [
         { key: 'reduced',   label: 'Reduced (50%)',    mass: total * 0.5 },
         { key: 'critical',  label: 'Critical (90%)',   mass: total * 0.9 },
         { key: 'collapsed', label: 'Collapsed (100%)', mass: total * 1.0 },
-      ].filter(t => t.mass > b); // skip thresholds already crossed
+      ].filter(t => t.mass > b);
 
-      const rollingRows = (plan.passes || []).map(p => ({ ...p, rowType: 'rolling' }));
-      let running = plan.totalMass || 0;
-      const farRows = farSideShips.value.map(f => {
-        running += f.mass;
-        return { rowType: 'far-side', label: f.label, mass: f.mass, running };
-      });
-      const rawRows = [...rollingRows, ...farRows];
-
-      // Interleave threshold separators after the pass that crosses each threshold
-      const allRows = [];
+      const rows = [];
+      let running = 0;
       let prevRunning = 0;
-      for (const row of rawRows) {
-        const totalThrough = b + row.running;
-        const remaining    = target - totalThrough;               // vs plan target
-        const pct          = total > 0 ? (totalThrough / total) * 100 : 0; // vs nominal WH mass
-        allRows.push({ ...row, totalThrough, remaining, pct, stateAfter: _whStateAfter(pct) });
-        for (const thr of thresholds) {
-          const rel = thr.mass - b;
-          if (prevRunning < rel && row.running >= rel) {
-            allRows.push({ rowType: 'threshold', label: thr.label, key: thr.key });
-          }
+
+      function addPass(pass) {
+        const prev = running;
+        running += pass.mass;
+        const totalThrough = b + running;
+        const pct = total > 0 ? (totalThrough / total) * 100 : 0;
+        rows.push({
+          rowType: 'rolling',
+          direction: pass.direction,
+          isScout:  !!pass.isScout,
+          isFinal:  !!pass.isFinal,
+          label: `${pass.name} — ${pass.passType === 'hot' ? '♨ Hot' : '❄ Cold'}`,
+          mass: pass.mass,
+          passType: pass.passType,
+          running,
+          totalThrough,
+          pct,
+          stateAfter: _whStateAfter(pct),
+        });
+        _insertThresholds(rows, thresholds, b, prevRunning, running);
+        prevRunning = running;
+      }
+
+      for (let gi = 0; gi < plan.groups.length; gi++) {
+        const group = plan.groups[gi];
+        const groupNum = gi + 1;
+
+        rows.push({
+          rowType:      'group-header',
+          groupNum,
+          groupType:    group.type,
+          pilotCount:   group.pilotCount,
+          totalGroups:  plan.groups.length,
+        });
+
+        // Enter phase
+        rows.push({ rowType: 'phase-header', direction: 'enter', count: group.enters.length });
+        for (const pass of group.enters) addPass(pass);
+
+        // Scout returns (final group only, shown before regular returns)
+        if (group.scoutReturns && group.scoutReturns.length) {
+          rows.push({ rowType: 'phase-header', direction: 'scout-return', count: group.scoutReturns.length });
+          for (const pass of group.scoutReturns) addPass(pass);
         }
-        prevRunning = row.running;
+
+        // Return phase
+        rows.push({ rowType: 'phase-header', direction: 'return', count: group.returns.length });
+        for (const pass of group.returns) addPass(pass);
       }
 
-      // Assign sequential pass numbers (skipping threshold rows) and mark final
-      let passNum = 0;
-      let lastPassIdx = -1;
-      for (let i = 0; i < allRows.length; i++) {
-        if (allRows[i].rowType !== 'threshold') { allRows[i].num = ++passNum; lastPassIdx = i; }
-      }
-      if (lastPassIdx >= 0) allRows[lastPassIdx] = { ...allRows[lastPassIdx], isFinal: true };
+      // Mark the very first rolling row as 'isNext' (the next action to take)
+      const firstRolling = rows.find(r => r.rowType === 'rolling');
+      if (firstRolling) firstRolling.isNext = true;
 
-      return allRows;
+      return rows;
     }
 
-    // ── Unified Plan (done passes + planned passes merged) ────────────────────
+    // ── Unified Plan (done passes + planned groups merged) ────────────────────
     const activePlanView = ref('worst');
 
-    function buildFullDisplayPlan(plan, planTarget) {
+    function buildFullDisplayPlan(plan) {
       const result = [];
 
       for (const p of passesWithRunning.value) {
@@ -586,33 +699,19 @@ createApp({
         }
       }
 
-      const plannedRows = buildDisplayPlan(plan, planTarget);
+      const plannedRows = buildGroupedDisplayPlan(plan);
 
       const hasCompleted = result.some(r => r.rowType === 'done');
-      const hasPlanned   = plannedRows.some(r => r.rowType !== 'threshold');
+      const hasPlanned   = plannedRows.some(r => r.rowType === 'rolling');
       if (hasCompleted && hasPlanned) result.push({ rowType: 'divider' });
 
-      let foundNext = false;
-      for (const row of plannedRows) {
-        if (!foundNext && row.rowType !== 'threshold') {
-          result.push({ ...row, isNext: true });
-          foundNext = true;
-        } else {
-          result.push(row);
-        }
-      }
+      for (const row of plannedRows) result.push(row);
 
       return result;
     }
 
-    const displayFullBestCase = computed(() => buildFullDisplayPlan(
-      bestCasePlan.value,
-      wormhole.totalMass * (rollingTarget.value === 'critical' ? 0.9 : 1.0)
-    ));
-    const displayFullWorstCase = computed(() => buildFullDisplayPlan(
-      worstCasePlan.value,
-      wormhole.totalMass * (rollingTarget.value === 'critical' ? 1.0 : 1.1)
-    ));
+    const displayFullBestCase = computed(() => buildFullDisplayPlan(bestCasePlan.value));
+    const displayFullWorstCase = computed(() => buildFullDisplayPlan(worstCasePlan.value));
     const activePlanDisplay = computed(() =>
       activePlanView.value === 'best' ? displayFullBestCase.value : displayFullWorstCase.value
     );
@@ -621,7 +720,7 @@ createApp({
     );
     const nextPassRow = computed(() => {
       const display = activePlanDisplay.value;
-      return display.find(r => r.isNext) ?? null;
+      return display.find(r => r.rowType === 'rolling' && r.isNext) ?? null;
     });
 
 
@@ -645,7 +744,7 @@ createApp({
       farSideShips, farSideForm, farSideMass, farSideSelectedShip, farSideShipMass,
       canSubmitFarSide, farSideCustomMassInput, farSideAloneCollapses, farSideOverCollapses,
       effectiveMassToColMin, effectiveMassToColMax,
-      rollingTarget,
+      rollingTarget, numPilots,
       activePlanView, activePlanDisplay, activePlan, nextPassRow,
       passTooltip, showPassTooltip, hidePassTooltip,
       barFillStyle, barVarianceStyle, markerReducedLeft, markerCriticalLeft, markerTotalLeft,
