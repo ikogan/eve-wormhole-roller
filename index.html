@@ -661,6 +661,8 @@
                       <div v-else
                         :class="['plan-pass-item', { 'is-far-side': row.rowType === 'far-side', 'is-final': row.isFinal }]"
                         role="listitem"
+                        @mouseenter="showPassTooltip($event, row)"
+                        @mouseleave="hidePassTooltip"
                       >
                         <span class="plan-pass-n">{{ row.rowType === 'far-side' ? '⬅' : row.num }}</span>
                         <span class="plan-pass-label">
@@ -668,7 +670,9 @@
                           <span v-if="row.isFinal" class="plan-collapse-icon" :title="rollingTarget === 'critical' ? 'Wormhole enters critical state' : 'Wormhole collapses'">⊗</span>
                         </span>
                         <span class="plan-pass-mass">{{ fmtMass(row.mass) }}</span>
-                        <span class="plan-pass-running">{{ fmtMass(row.running) }}</span>
+                        <span class="plan-pass-remaining" :class="{ 'is-over': row.remaining < 0 }">
+                          {{ row.remaining > 0 ? fmtMass(row.remaining) : '—' }}
+                        </span>
                       </div>
                     </template>
                   </div>
@@ -715,6 +719,8 @@
                       <div v-else
                         :class="['plan-pass-item', { 'is-far-side': row.rowType === 'far-side', 'is-final': row.isFinal }]"
                         role="listitem"
+                        @mouseenter="showPassTooltip($event, row)"
+                        @mouseleave="hidePassTooltip"
                       >
                         <span class="plan-pass-n">{{ row.rowType === 'far-side' ? '⬅' : row.num }}</span>
                         <span class="plan-pass-label">
@@ -722,7 +728,9 @@
                           <span v-if="row.isFinal" class="plan-collapse-icon" :title="rollingTarget === 'critical' ? 'Wormhole enters critical state' : 'Wormhole collapses'">⊗</span>
                         </span>
                         <span class="plan-pass-mass">{{ fmtMass(row.mass) }}</span>
-                        <span class="plan-pass-running">{{ fmtMass(row.running) }}</span>
+                        <span class="plan-pass-remaining" :class="{ 'is-over': row.remaining < 0 }">
+                          {{ row.remaining > 0 ? fmtMass(row.remaining) : '—' }}
+                        </span>
                       </div>
                     </template>
                   </div>
@@ -819,6 +827,41 @@
 </footer>
 
 </div><!-- /#app -->
+
+<!-- Pass row hover tooltip (teleported to body to escape scroll container clipping) -->
+<Teleport to="body">
+  <div
+    v-if="passTooltip.show && passTooltip.row"
+    class="pass-row-tooltip"
+    :style="{ left: passTooltip.x + 'px', top: passTooltip.y + 'px' }"
+    role="tooltip"
+  >
+    <div class="prt-row prt-label">{{ passTooltip.row.label }}</div>
+    <div class="prt-divider"></div>
+    <div class="prt-row">
+      <span class="prt-key">This pass</span>
+      <span class="prt-val">{{ fmtMass(passTooltip.row.mass) }}</span>
+    </div>
+    <div class="prt-row">
+      <span class="prt-key">Total through WH</span>
+      <span class="prt-val">{{ fmtMass(passTooltip.row.totalThrough) }}</span>
+    </div>
+    <div class="prt-row">
+      <span class="prt-key">Remaining</span>
+      <span class="prt-val" :class="passTooltip.row.remaining < 0 ? 'prt-danger' : ''">
+        {{ passTooltip.row.remaining >= 0 ? fmtMass(passTooltip.row.remaining) : fmtMass(-passTooltip.row.remaining) + ' over' }}
+      </span>
+    </div>
+    <div class="prt-row">
+      <span class="prt-key">% consumed</span>
+      <span class="prt-val">{{ passTooltip.row.pct.toFixed(1) }}%</span>
+    </div>
+    <div class="prt-row">
+      <span class="prt-key">State after</span>
+      <span class="prt-val">{{ passTooltip.row.stateAfter }}</span>
+    </div>
+  </div>
+</Teleport>
 
 <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>

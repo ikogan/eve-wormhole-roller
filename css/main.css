@@ -928,11 +928,15 @@ input[type="number"] { -moz-appearance: textfield; }
   white-space: nowrap;
 }
 
-.plan-pass-running {
+.plan-pass-remaining {
   font-family: var(--font-mono);
   font-size: 0.7rem;
   color: var(--color-text-muted);
   white-space: nowrap;
+}
+
+.plan-pass-remaining.is-over {
+  color: var(--color-danger);
 }
 
 .plan-footer {
@@ -1368,4 +1372,53 @@ body, .card, .app-header, .tab-nav, .modal, .pass-entry, .plan-card {
   color: var(--color-text-muted);
   padding: 4px 0;
   font-size: 0.9rem;
+}
+
+/* ── Pass Row Tooltip ─────────────────────────────────────── */
+.pass-row-tooltip {
+  position: fixed;
+  transform: translateX(-50%) translateY(-100%);
+  z-index: 9999;
+  background: var(--color-bg-modal);
+  border: 1px solid var(--color-border-bright);
+  border-radius: 8px;
+  padding: 10px 14px;
+  min-width: 220px;
+  pointer-events: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  font-size: 0.78rem;
+}
+
+.prt-label {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  font-size: 0.8rem;
+  margin-bottom: 2px;
+}
+
+.prt-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 6px 0;
+}
+
+.prt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 1px 0;
+}
+
+.prt-key {
+  color: var(--color-text-muted);
+}
+
+.prt-val {
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
+.prt-danger {
+  color: var(--color-danger);
 }

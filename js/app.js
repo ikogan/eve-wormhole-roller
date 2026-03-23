@@ -440,6 +440,13 @@ createApp({
     function threshClass(val) { return val <= 0 ? 'text-success' : ''; }
 
     // ── Display Plans (rolling passes + far-side return rows merged) ──────────
+    function _whStateAfter(pct) {
+      if (pct >= 100) return 'Collapsed ⊗';
+      if (pct >= 90)  return 'Critical ⚠';
+      if (pct >= 50)  return 'Reduced';
+      return 'Stable';
+    }
+
     function buildDisplayPlan(plan) {
       if (!plan || plan.impossible || plan.tooMany) return [];
 
@@ -469,7 +476,11 @@ createApp({
             allRows.push({ rowType: 'threshold', label: thr.label, key: thr.key });
           }
         }
-        allRows.push({ ...row });
+        // Enrich each pass row with computed display values
+        const totalThrough = base + row.running;
+        const remaining    = total - totalThrough;
+        const pct          = total > 0 ? (totalThrough / total) * 100 : 0;
+        allRows.push({ ...row, totalThrough, remaining, pct, stateAfter: _whStateAfter(pct) });
         prevRunning = row.running;
       }
 
@@ -486,6 +497,18 @@ createApp({
     const displayBestCase  = computed(() => buildDisplayPlan(bestCasePlan.value));
     const displayWorstCase = computed(() => buildDisplayPlan(worstCasePlan.value));
 
+    // ── Pass row hover tooltip ────────────────────────────────────────────────
+    const passTooltip = reactive({ show: false, x: 0, y: 0, row: null });
+
+    function showPassTooltip(event, row) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      passTooltip.row  = row;
+      passTooltip.x    = rect.left + rect.width / 2;
+      passTooltip.y    = rect.top - 8;
+      passTooltip.show = true;
+    }
+    function hidePassTooltip() { passTooltip.show = false; }
+
     // ── Expose to template ───────────────────────────────────────────────────
     return {
       activeTab, selectedTheme, massUnit, wormhole, ships, passes, passForm, shipModal, yamlFileRef,
@@ -496,6 +519,7 @@ createApp({
       canSubmitFarSide, farSideCustomMassInput, farSideAloneCollapses, farSideOverCollapses,
       effectiveMassToColMin, effectiveMassToColMax,
       rollingTarget, displayBestCase, displayWorstCase,
+      passTooltip, showPassTooltip, hidePassTooltip,
       barFillStyle, barVarianceStyle, markerReducedLeft, markerCriticalLeft, markerTotalLeft,
       statusClass, selectedShip, shipPassMass, shipPassFits, canSubmitPass,
       passesReversed, passOptions, worstCasePlan, bestCasePlan, calcBusy,
