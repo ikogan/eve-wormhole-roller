@@ -475,9 +475,8 @@ createApp({
     const farSideSelectedShip = computed(() => ships.value.find(s => s.id === farSideForm.shipId) ?? null);
     const farSideShipMass     = computed(() => {
       if (!farSideSelectedShip.value) return 0;
-      return farSideForm.passType === 'hot'
-        ? (farSideSelectedShip.value.hotMass  || 0)
-        : (farSideSelectedShip.value.coldMass || 0);
+      // Return is always cold — scouts don't need MWD to come back.
+      return farSideSelectedShip.value.coldMass || 0;
     });
     const canSubmitFarSide = computed(() => {
       if (farSideForm.mode === 'ship') return !!farSideForm.shipId && farSideShipMass.value > 0;
