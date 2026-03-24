@@ -21,7 +21,7 @@
     </div>
 
     <div class="header-wh-info">
-      <span v-if="wormhole.name" class="wh-name">{{ wormhole.name }}</span>
+      <span v-if="whDisplayName" class="wh-name">{{ whDisplayName }}</span>
       <span v-if="wormhole.totalMass > 0" class="wh-status-badge" :class="statusClass">
         ● {{ wormhole.status.toUpperCase() }}
       </span>
@@ -104,6 +104,56 @@
         <section class="card" aria-labelledby="wh-config-title">
           <h2 class="card-title" id="wh-config-title">Wormhole Configuration</h2>
           <div class="modal-form">
+            <label class="form-label">
+              Wormhole Type
+              <div class="wh-type-combobox">
+                <div class="wh-type-input-wrap">
+                  <input
+                    :value="whTypeSearch"
+                    @input="whTypeSearch = $event.target.value; whDropdownOpen = true; whDropdownIdx = -1"
+                    @focus="openWhDropdown"
+                    @blur="onWhInputBlur"
+                    @keydown="onWhDropdownKey"
+                    class="form-input"
+                    :placeholder="whTypesFetching ? 'Loading wormhole types…' : 'e.g. Z971 — type or scroll to select'"
+                    :disabled="whTypesFetching && whTypeData.length === 0"
+                    autocomplete="off"
+                    spellcheck="false"
+                    aria-haspopup="listbox"
+                    :aria-expanded="whDropdownOpen"
+                  >
+                  <span v-if="whTypeIsCustom" class="wh-type-custom-badge" title="Custom value — mass and size not auto-populated from EVE data">ⓘ</span>
+                  <span v-if="whTypeFetching || whTypesFetching" class="wh-type-fetching" :title="whTypesFetching ? 'Loading wormhole type list…' : 'Loading wormhole data…'">⋯</span>
+                  <button
+                    class="btn btn-secondary btn-sm wh-type-refresh-btn"
+                    :disabled="whTypesFetching"
+                    title="Refresh wormhole type list from EVE ESI (useful after EVE updates)"
+                    @click.prevent="refreshWhTypes"
+                  >↺</button>
+                </div>
+                <div v-if="whDropdownOpen && whFlatOptions.length > 0" class="wh-type-dropdown" role="listbox">
+                  <template v-for="group in whFilteredGroups" :key="group.label">
+                    <div class="wh-type-group-header">{{ group.label }}</div>
+                    <button
+                      v-for="(type, ti) in group.types"
+                      :key="type.typeId"
+                      type="button"
+                      role="option"
+                      class="wh-type-option"
+                      :class="{ 'is-active': whFlatOptions.indexOf(type) === whDropdownIdx }"
+                      @mousedown.prevent="selectWhType(type)"
+                    >
+                      <span class="wh-type-option-name">{{ type.name }}</span>
+                      <span class="wh-type-option-size">{{ whSizeLabel(type.maxJumpMass) }}</span>
+                    </button>
+                  </template>
+                  <div v-if="whTypesFetching" class="wh-type-loading">Loading…</div>
+                </div>
+                <div v-else-if="whDropdownOpen && whTypeSearch && !whTypesFetching && whFlatOptions.length === 0" class="wh-type-dropdown wh-type-no-match" role="listbox">
+                  <div class="wh-type-group-header">No matching wormhole types</div>
+                </div>
+              </div>
+            </label>
             <label class="form-label">
               Name / Designation
               <input
