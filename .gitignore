@@ -1,2 +1,6 @@
 # Generated single-file build (run build-local.sh)
 eve-wormhole-roller.html
+
+# EVE Static Data Export download (regenerate with scripts/update-sde.py)
+*.zip
+__pycache__/

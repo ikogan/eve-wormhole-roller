@@ -277,6 +277,7 @@ createApp({
       totalMass: savedWh?.totalMass ?? 0,  // always stored in kg
       status:    savedWh?.status    ?? 'stable',
       size:      savedWh?.size      ?? '', // '' = unknown / not set
+      typeName:  savedWh?.typeName  ?? '', // '' = no type selected (e.g. "Z971")
     });
 
     const ships      = ref(JSON.parse(localStorage.getItem(STORAGE_SHIPS)    || '[]'));
@@ -357,6 +358,76 @@ createApp({
 
     /** True if a mass (kg) fits through the configured wormhole size. */
     function massFits(kg) { return !whSizeLimit.value || kg <= whSizeLimit.value; }
+
+    // ── Wormhole Type (ESI typeahead) ─────────────────────────────────────────
+    // whTypeData: array of {name, typeId} loaded from window.WH_TYPE_DATA or data/wormhole-types.json
+    const whTypeData = ref(Array.isArray(window.WH_TYPE_DATA) ? window.WH_TYPE_DATA : []);
+
+    // If the data wasn't embedded (GitHub Pages), wait for the fetch to complete
+    if (!Array.isArray(window.WH_TYPE_DATA) || whTypeData.value.length === 0) {
+      const poll = setInterval(() => {
+        if (Array.isArray(window.WH_TYPE_DATA) && window.WH_TYPE_DATA.length > 0) {
+          whTypeData.value = window.WH_TYPE_DATA;
+          clearInterval(poll);
+        }
+      }, 200);
+    }
+
+    // The matched type entry (null if no match or no value)
+    const whTypeEntry    = computed(() => whTypeData.value.find(t => t.name === wormhole.typeName) ?? null);
+    const whTypeId       = computed(() => whTypeEntry.value?.typeId ?? null);
+    // True if user has typed something that doesn't match any known type
+    const whTypeIsCustom = computed(() => !!wormhole.typeName && !whTypeEntry.value);
+
+    const whTypeFetching = ref(false);
+
+    // Combined display name shown in header and plan: "{typeName} — {name}" or just one of them
+    const whDisplayName = computed(() => {
+      const type = wormhole.typeName.trim();
+      const name = wormhole.name.trim();
+      if (type && name) return `${type} — ${name}`;
+      return type || name || null;
+    });
+
+    // ESI dogma attribute IDs for wormhole types
+    const ESI_ATTR_MAX_STABLE_MASS = 1383; // total mass limit in kg
+    const ESI_ATTR_MAX_JUMP_MASS   = 1385; // max single-jump mass in kg
+
+    async function onWhTypeChange() {
+      const typeId = whTypeId.value;
+      if (!typeId) return; // custom or empty — don't fetch
+      whTypeFetching.value = true;
+      try {
+        const resp = await fetch(`https://esi.evetech.net/latest/universe/types/${typeId}/?datasource=tranquility`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const attrs = data.dogma_attributes || [];
+        const getAttr = id => attrs.find(a => a.attribute_id === id)?.value ?? null;
+
+        const totalMass  = getAttr(ESI_ATTR_MAX_STABLE_MASS);
+        const maxJumpMass = getAttr(ESI_ATTR_MAX_JUMP_MASS);
+
+        if (totalMass  != null) wormhole.totalMass = totalMass;
+        if (maxJumpMass != null) {
+          // Map maxJumpMass to the closest WH_SIZES entry
+          const matched = WH_SIZES.reduce((best, sz) =>
+            Math.abs(sz.maxShipMass - maxJumpMass) < Math.abs(best.maxShipMass - maxJumpMass) ? sz : best
+          );
+          if (Math.abs(matched.maxShipMass - maxJumpMass) < maxJumpMass * 0.5) {
+            wormhole.size = matched.id;
+          }
+        }
+      } catch (_) {
+        // Network error — leave fields unchanged
+      } finally {
+        whTypeFetching.value = false;
+      }
+    }
+
+    // Also trigger ESI fetch when typeName changes to a known type via keyboard (datalist selection)
+    watch(() => wormhole.typeName, (newVal) => {
+      if (whTypeEntry.value) onWhTypeChange();
+    });
 
     // ── Mass Computeds ───────────────────────────────────────────────────────
     const usedMass = computed(() => passes.value.reduce((s, p) => s + p.mass, 0));
@@ -725,6 +796,7 @@ createApp({
         passes.value = []; farSideShips.value = [];
         wormhole.name = ''; wormhole.totalMass = 0;
         wormhole.status = 'stable'; wormhole.size = '';
+        wormhole.typeName = '';
       }
     }
 
@@ -1048,6 +1120,7 @@ createApp({
       passesReversed, passesWithRunning, passOptions, worstCasePlan, bestCasePlan, calcBusy,
       shipModalValid, unitStep,
       whTotalMassInput, draftColdInput, draftHotInput, customMassInput,
+      whTypeData, whTypeId, whTypeIsCustom, whTypeFetching, whDisplayName, onWhTypeChange,
       applyTheme, fmtMass, massFits,
       addPass, removePass, clearPasses, resetSession, recordPlanPass, advanceWhState, nextWhState,
       addFarSideShip, removeFarSideShip,

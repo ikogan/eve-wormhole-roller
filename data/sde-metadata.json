@@ -1,0 +1,8 @@
+{
+  "note": "Generated via ESI group 988 query (not from SDE download). Run scripts/update-sde.py to update from the official SDE.",
+  "etag": null,
+  "sha256": null,
+  "updated": null,
+  "wormholeCount": 130,
+  "source": "esi-group-988"
+}

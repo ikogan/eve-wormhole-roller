@@ -7,6 +7,15 @@
   <title>Wormhole Roller — EVE Online</title>
   <link rel="stylesheet" href="css/themes.css">
   <link rel="stylesheet" href="css/main.css">
+  <!-- Wormhole type data: embedded by build-offline.py for desktop; loaded from data/ for GitHub Pages -->
+  <script>
+    if (typeof window.WH_TYPE_DATA === 'undefined') {
+      fetch('./data/wormhole-types.json')
+        .then(r => r.ok ? r.json() : [])
+        .then(d => { window.WH_TYPE_DATA = d; })
+        .catch(() => { window.WH_TYPE_DATA = []; });
+    }
+  </script>
 </head>
 <body>
 <div id="app">
@@ -21,7 +30,7 @@
     </div>
 
     <div class="header-wh-info">
-      <span v-if="wormhole.name" class="wh-name">{{ wormhole.name }}</span>
+      <span v-if="whDisplayName" class="wh-name">{{ whDisplayName }}</span>
       <span v-if="wormhole.totalMass > 0" class="wh-status-badge" :class="statusClass">
         ● {{ wormhole.status.toUpperCase() }}
       </span>
@@ -104,6 +113,25 @@
         <section class="card" aria-labelledby="wh-config-title">
           <h2 class="card-title" id="wh-config-title">Wormhole Configuration</h2>
           <div class="modal-form">
+            <label class="form-label">
+              Wormhole Type
+              <div class="wh-type-input-wrap">
+                <input
+                  v-model="wormhole.typeName"
+                  list="wh-types-datalist"
+                  class="form-input"
+                  placeholder="e.g. Z971 — type or scroll to select"
+                  autocomplete="off"
+                  spellcheck="false"
+                  @change="onWhTypeChange"
+                >
+                <datalist id="wh-types-datalist">
+                  <option v-for="t in whTypeData" :value="t.name" :key="t.typeId"></option>
+                </datalist>
+                <span v-if="whTypeIsCustom" class="wh-type-custom-badge" title="Custom value — mass and size not auto-populated from EVE data">ⓘ</span>
+                <span v-if="whTypeFetching" class="wh-type-fetching" title="Loading wormhole data…">⋯</span>
+              </div>
+            </label>
             <label class="form-label">
               Name / Designation
               <input

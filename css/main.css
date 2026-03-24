@@ -1058,6 +1058,39 @@ input[type="number"] { -moz-appearance: textfield; }
   line-height: 1.4;
 }
 
+/* ── Wormhole Type Typeahead ──────────────────────────────── */
+.wh-type-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wh-type-input-wrap .form-input {
+  flex: 1;
+}
+
+.wh-type-custom-badge {
+  font-size: 1.1rem;
+  color: var(--color-accent, #5599ff);
+  cursor: help;
+  flex-shrink: 0;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.wh-type-fetching {
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  animation: wh-type-pulse 1s infinite;
+}
+
+@keyframes wh-type-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 1; }
+}
+
 /* ── Setup Tab Layout ─────────────────────────────────────── */
 /* Default (mobile): column layout for setup/roll content wrappers */
 .setup-tab-content,
