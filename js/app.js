@@ -737,7 +737,7 @@ createApp({
         entry = {
           id: genId(), mode: 'ship',
           shipId: farSideForm.shipId, passType: farSideForm.passType,
-          label: `${farSideSelectedShip.value.name} (${farSideForm.passType === 'hot' ? '♨ Hot' : '❄ Cold'})`,
+          label: `${farSideSelectedShip.value.name} — ${farSideForm.passType === 'hot' ? '♨ Hot' : '❄ Cold'}`,
           mass: farSideShipMass.value,
         };
       } else {
