@@ -1053,7 +1053,7 @@ input[type="number"] { -moz-appearance: textfield; }
   border-radius: 6px;
   background: color-mix(in srgb, var(--color-warning, #c8a000) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-warning, #c8a000) 40%, transparent);
-  color: var(--color-text-muted);
+  color: var(--color-text);
   font-size: 0.8rem;
   line-height: 1.4;
 }
