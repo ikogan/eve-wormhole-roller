@@ -1822,6 +1822,17 @@ input[type="number"] { -moz-appearance: textfield; }
   color: var(--color-danger);
 }
 
+.plan-beta-notice {
+  margin: 8px 0 4px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-warning, #c8a000) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning, #c8a000) 40%, transparent);
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
 /* ── Setup Tab Layout ─────────────────────────────────────── */
 /* Default (mobile): column layout for setup/roll content wrappers */
 .setup-tab-content,
@@ -3002,6 +3013,11 @@ body, .card, .app-header, .tab-nav, .modal {
               <div v-if="calcBusy" class="calc-spinner-wrap" role="status" aria-live="polite">
                 <span class="calc-spinner" aria-hidden="true"></span>
                 <span class="calc-spinner-label">Calculating…</span>
+              </div>
+
+              <!-- Beta warning -->
+              <div v-if="!calcBusy" class="plan-beta-notice" role="note">
+                ⚠ <strong>Beta feature.</strong> The rolling plan is an estimate — always use your own judgement. Do not follow the plan blindly, especially near the collapse threshold.
               </div>
 
               <template v-else-if="activePlan">
