@@ -3470,7 +3470,7 @@ const STORAGE_PILOTS         = 'eve-whr-pilots-v1';
 const STORAGE_SHOW_PLAN      = 'eve-whr-show-plan-v1';
 const STORAGE_ACTIVE_TAB     = 'eve-whr-active-tab-v1';
 const STORAGE_PLAN_VIEW      = 'eve-whr-plan-view-v1';
-const STORAGE_WH_TYPES       = 'eve-whr-wh-types-v1'; // cached wormhole type list from ESI
+const STORAGE_WH_TYPES       = 'eve-whr-wh-types-v2'; // cached wormhole type list from ESI
 
 // ── EVE ESI wormhole dogma attribute IDs ─────────────────────────────────────
 // These are the numeric attribute IDs returned in dogma_attributes[] when
@@ -3846,10 +3846,14 @@ createApp({
         case 304: return { label: 'NS — Null Security', order: 9 };
         case 709: return { label: 'Thera',              order: 10 };
         case 731: return { label: 'Drifter Hive',       order: 11 };
+        case 3128: return { label: 'LS — Low Security', order: 8  }; // J377 (Turnur)
+        case 3671: return { label: 'LS — Low Security', order: 8  }; // J492 (Tabbetzur)
+        case 4134: return { label: 'Pochven',           order: 12 }; // I078 (Pochven→Pochven)
+        case 4136: return { label: 'Pochven',           order: 12 }; // L687 (Pochven→Pochven)
+        case 4138: return { label: 'Pochven',           order: 12 }; // O546 (Pochven→Pochven)
         default:
           if (cls >= 2925 && cls <= 3000) return { label: 'Pochven',  order: 12 };
-          if (cls >= 3000)               return { label: 'Other',     order: 99 };
-          return null; // filtered out (K162, QA holes, etc.)
+          return null; // filtered out (K162, QA holes, internal testing types, etc.)
       }
     }
 
@@ -3968,7 +3972,8 @@ createApp({
         : whTypeData.value;
       const groupMap = new Map();
       for (const t of filtered) {
-        const grp = _whDestGroup(t.destClass) ?? { label: 'Other', order: 99 };
+        const grp = _whDestGroup(t.destClass);
+        if (!grp) continue;
         if (!groupMap.has(grp.label)) {
           groupMap.set(grp.label, { label: grp.label, order: grp.order, types: [] });
         }
