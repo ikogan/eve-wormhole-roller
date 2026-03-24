@@ -99,10 +99,11 @@ The plan is divided into **groups**:
 | Group type | Purpose |
 |---|---|
 | **Stranded** | Ships already on the far side that must return before any new pilots enter |
-| **Bulk** | Full N-pilot round-trips — all pilots enter and return with the heavy ship |
-| **Final** | Mixed sequence: extra round-trips + final ship cold enter + scout returns + hot collapse pass |
+| **Bulk** | Full N-pilot round-trips — all pilots enter and return together |
+| **Solo** | Single-pilot round-trip (remainder after even division) — enter, return, done before next pilot starts |
+| **Final** | Collapse pilot cold enter + scout returns + hot collapse pass (⊗) |
 
-The final group's last pass is always a **hot return** that tips the wormhole into its collapse range.
+The final group's last pass is always a **hot return (⊗)** that tips the wormhole into its collapse range. Only 1 pilot is ever on the far side during the final group.
 
 ### Algorithm Steps
 
@@ -119,14 +120,18 @@ For each candidate "final ship" (sorted heaviest-hot-mass first):
   3. Find minimum K bulk round-trips whose total mass lands in [M_min, M_max].
      Each round-trip is one of:
        hot/hot   = 2 × hotMass   (heaviest)
-       hot/cold  = hotMass + coldMass  (mix)
-       cold/cold = 2 × coldMass  (lightest)
-     Strategy: start all-hot, switch whole RTs to cold/cold as needed.
-     If granularity is too coarse, add one hot/cold "mix" RT.
+       hot/cold  = hotMass + coldMass  (mix, saves d kg)
+       cold/cold = 2 × coldMass  (lightest, saves 2d kg)
 
-  4. Distribute K round-trips across N-pilot bulk groups + the final group.
-       M full bulk groups  = floor(K / N)   — each group: N pilots, N enters + N returns
-       extraRTs            = K mod N        — go into the final group
+     Savings-units approach (exhaustive, always finds the valid config if one exists):
+       n = savings units needed; each hot→cold switch saves d = hotMass − coldMass kg.
+       n_min = ⌈(allHotTotal − M_max) / d⌉,  n_max = ⌊(allHotTotal − M_min) / d⌋
+       Use n = n_min → coldRTs = ⌊n/2⌋, mixRTs = n mod 2, hotRTs = K − coldRTs − mixRTs.
+
+  4. Distribute K round-trips across groups:
+       M full bulk groups  = floor(K / N)   — each: N pilots enter and return together
+       Solo groups         = K mod N        — one per remainder pilot, sequential (never concurrent)
+       Final group         = 1 pilot only   — cold enter + scout returns + ⊗ hot collapse
 
   5. Keep the result with the fewest total passes.
 ```
@@ -145,11 +150,10 @@ flowchart TD
     F --> G{M_max < 0?}
     G -- Yes, skip --> D
     G -- No --> H[Compute kMin = ⌈M_min / maxRT⌉]
-    H --> I[Try K = kMin … kMin+3]
-    I --> J[_findBulkConfig: find hot/mix/cold RT mix\nthat lands bulk mass in window]
-    J --> K{Config found?}
-    K -- No, next K --> I
-    K -- Yes --> L[_makeGroups: split K into\nbulk groups + final group]
+    H --> I[_findBulkConfig: savings-units math\nfinds exact hot/mix/cold mix for kMin]
+    I --> K{Config found?}
+    K -- No, skip finalShip --> D
+    K -- Yes --> L[_makeGroups: M bulk groups\n+ extraRTs solo groups\n+ 1 final group]
     L --> M{Fewer passes\nthan best so far?}
     M -- Yes --> N[Update bestResult]
     M -- No --> D
