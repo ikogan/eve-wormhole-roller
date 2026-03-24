@@ -594,6 +594,7 @@ input[type="number"] { -moz-appearance: textfield; }
   transition: all var(--transition);
   min-height: 44px;
   text-align: center;
+  white-space: nowrap;
 }
 
 .pass-type-tab:not(.active):hover {
@@ -715,7 +716,7 @@ input[type="number"] { -moz-appearance: textfield; }
 
 .plan-pass-item {
   display: grid;
-  grid-template-columns: 24px 1fr auto auto;
+  grid-template-columns: 20px 1fr auto auto auto auto;
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
@@ -736,19 +737,22 @@ input[type="number"] { -moz-appearance: textfield; }
   opacity: 0.85;
 }
 
-.plan-pass-item.is-far-side {
+.plan-pass-item.is-enter {
+  border-left-color: var(--color-accent);
+}
+
+.plan-pass-item.is-return {
+  border-left-color: var(--color-border-bright);
+}
+
+.plan-pass-item.is-scout {
   border-left-color: var(--color-warning);
   background: color-mix(in srgb, var(--color-warning) 8%, var(--color-bg-card));
   opacity: 1;
 }
 
-.plan-pass-item.is-far-side:hover {
+.plan-pass-item.is-scout:hover {
   background: color-mix(in srgb, var(--color-warning) 16%, var(--color-bg-hover));
-}
-
-.plan-pass-item.is-far-side .plan-pass-n {
-  color: var(--color-warning);
-  font-size: 0.75rem;
 }
 
 .plan-pass-item.is-final {
@@ -764,7 +768,6 @@ input[type="number"] { -moz-appearance: textfield; }
 .plan-pass-item.is-done {
   opacity: 0.55;
   border-left-color: var(--color-border-bright);
-  grid-template-columns: 24px 1fr auto auto auto;
   pointer-events: auto;
 }
 
@@ -776,7 +779,6 @@ input[type="number"] { -moz-appearance: textfield; }
 .plan-pass-item.is-next {
   border-left: 2px solid var(--color-accent);
   background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card));
-  grid-template-columns: 24px 1fr auto auto auto;
   opacity: 1;
 }
 
@@ -796,6 +798,128 @@ input[type="number"] { -moz-appearance: textfield; }
   border-radius: 3px;
   vertical-align: middle;
   opacity: 0.85;
+}
+
+.plan-scout-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning);
+  border-radius: 3px;
+  vertical-align: middle;
+  opacity: 0.85;
+}
+
+/* Direction indicator (→ / ←) on rolling pass rows */
+.plan-pass-dir {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.plan-pass-item.is-enter .plan-pass-dir { color: var(--color-accent); }
+.plan-pass-item.is-scout  .plan-pass-dir { color: var(--color-warning); }
+
+/* Percentage column shown on rolling pass rows */
+.plan-pass-pct {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.plan-pass-pct.is-reduced   { color: var(--color-text-secondary); }
+.plan-pass-pct.is-critical  { color: var(--color-warning); }
+.plan-pass-pct.is-collapsed { color: var(--color-danger); }
+
+/* Group header row */
+.plan-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px 4px;
+  margin-top: 6px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.plan-group-header:first-child {
+  margin-top: 0;
+}
+
+.plan-group-header.is-done {
+  opacity: 0.55;
+  border-bottom-color: var(--color-border);
+}
+
+.plan-group-header.is-stranded {
+  border-bottom-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.plan-group-header.is-stranded .plan-group-num {
+  color: var(--color-warning);
+}
+
+.plan-group-done-icon {
+  margin-right: 4px;
+  color: var(--color-success, #4caf50);
+  font-size: 0.7rem;
+}
+
+.plan-group-num {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+}
+
+.plan-group-pilots {
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+
+/* Phase header row (enter / scout-return / return) */
+.plan-phase-header {
+  padding: 3px 10px 2px 18px;
+  font-size: 0.67rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.plan-phase-header.is-enter  { color: var(--color-accent); }
+.plan-phase-header.is-return { color: var(--color-text-muted); }
+.plan-phase-header.is-done   { opacity: 0.55; }
+
+/* Pilots count control in plan card header */
+.plan-pilots-control {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.plan-pilots-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.plan-pilots-input {
+  width: 56px;
+  min-height: unset;
+  padding: 4px 6px;
+  font-size: 0.85rem;
+  text-align: center;
 }
 
 .plan-divider {
@@ -872,12 +996,6 @@ input[type="number"] { -moz-appearance: textfield; }
 .plan-threshold-sep.is-critical  { color: var(--color-warning); }
 .plan-threshold-sep.is-collapsed { color: var(--color-danger); }
 
-.plan-pass-n {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: var(--color-text-muted);
-  text-align: right;
-}
 
 .plan-pass-label {
   color: var(--color-text-primary);
@@ -898,9 +1016,9 @@ input[type="number"] { -moz-appearance: textfield; }
   white-space: nowrap;
 }
 
-.plan-pass-remaining.is-over {
-  color: var(--color-danger);
-}
+.plan-pass-remaining.is-reduced   { color: var(--color-text-secondary); }
+.plan-pass-remaining.is-critical  { color: var(--color-warning); }
+.plan-pass-remaining.is-collapsed { color: var(--color-danger); }
 
 .plan-footer {
   padding: 10px 14px;
@@ -995,6 +1113,14 @@ input[type="number"] { -moz-appearance: textfield; }
 .text-muted   { color: var(--color-text-muted); }
 .font-mono    { font-family: var(--font-mono); }
 
+/* ── Roll Tab Toolbar ────────────────────────────────────── */
+.roll-tab-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
 /* ── Responsive: Tablet and Desktop ───────────────────────── */
 @media (min-width: 768px) {
   .app-main {
@@ -1002,7 +1128,7 @@ input[type="number"] { -moz-appearance: textfield; }
   }
 
   .mass-stats-grid {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   }
 }
 
@@ -1021,14 +1147,21 @@ input[type="number"] { -moz-appearance: textfield; }
   .roll-tab-content {
     display: grid;
     grid-template-columns: 380px 1fr;
-    grid-template-rows: auto auto 1fr;
+    grid-template-rows: auto auto auto 1fr;
     gap: 16px;
     align-items: start;
   }
 
   .roll-card-mass    { grid-column: 1; grid-row: 1; }
   .roll-card-addpass { grid-column: 1; grid-row: 2; }
-  .roll-card-plan    { grid-column: 2; grid-row: 1 / span 3; }
+  .roll-card-farside { grid-column: 1; grid-row: 3; }
+  .roll-card-plan    { grid-column: 2; grid-row: 1 / span 5; }
+  .roll-card-history { grid-column: 2; grid-row: 1 / span 5; }
+
+  /* In the narrow left column the 5-up grid smushes. Use 2×2 instead. */
+  .roll-card-mass .mass-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* ── Responsive: Mobile ───────────────────────────────────── */
