@@ -203,19 +203,23 @@
                   <td class="ship-name">{{ ship.name }}</td>
                   <td class="mass-value">{{ fmtMass(ship.coldMass) }}</td>
                   <td class="mass-value">{{ fmtMass(ship.hotMass) }}</td>
-                  <td class="ship-compat">
-                    <span v-if="!whSizeLimit" class="compat-unknown" title="No wormhole size set">—</span>
-                    <template v-else>
-                      <span :class="massFits(ship.coldMass) ? 'compat-ok' : 'compat-no'"
-                            :title="massFits(ship.coldMass) ? 'Cold pass fits' : 'Cold mass too heavy'">❄</span>
-                      <span :class="massFits(ship.hotMass) ? 'compat-ok' : 'compat-no'"
-                            :title="massFits(ship.hotMass) ? 'Hot pass fits' : 'Hot mass too heavy'">♨</span>
-                    </template>
+                  <td>
+                    <div class="ship-compat">
+                      <span v-if="!whSizeLimit" class="compat-unknown" title="No wormhole size set">—</span>
+                      <template v-else>
+                        <span :class="massFits(ship.coldMass) ? 'compat-ok' : 'compat-no'"
+                              :title="massFits(ship.coldMass) ? 'Cold pass fits' : 'Cold mass too heavy'">❄</span>
+                        <span :class="massFits(ship.hotMass) ? 'compat-ok' : 'compat-no'"
+                              :title="massFits(ship.hotMass) ? 'Hot pass fits' : 'Hot mass too heavy'">♨</span>
+                      </template>
+                    </div>
                   </td>
-                  <td class="ship-actions">
-                    <button @click="openEditShip(ship)" class="btn btn-secondary btn-xs">Edit</button>
-                    <button @click="cloneShip(ship)"    class="btn btn-secondary btn-xs" title="Clone ship">⎘</button>
-                    <button @click="deleteShip(ship.id)"  class="btn btn-danger btn-xs">✕</button>
+                  <td>
+                    <div class="ship-actions">
+                      <button @click="openEditShip(ship)" class="btn btn-secondary btn-xs">Edit</button>
+                      <button @click="cloneShip(ship)"    class="btn btn-secondary btn-xs" title="Clone ship">⎘</button>
+                      <button @click="deleteShip(ship.id)"  class="btn btn-danger btn-xs">✕</button>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -323,6 +327,13 @@
          ROLL TAB
     ─────────────────────────────────────────────────────── -->
     <div v-if="activeTab === 'roll'" class="tab-content">
+
+      <!-- Plan mode toggle -->
+      <div class="roll-tab-toolbar">
+        <button class="btn btn-sm" :class="showPlan ? 'btn-secondary' : 'btn-primary'" @click="showPlan = !showPlan">
+          {{ showPlan ? '⊟ Hide Plan' : '📋 Show Plan' }}
+        </button>
+      </div>
 
       <!-- Desktop: two-column for roll tab -->
       <div class="roll-tab-content">
@@ -499,11 +510,213 @@
               @click="addPass"
               :disabled="!canSubmitPass"
               class="btn btn-primary btn-full"
-            >↻ Record Pass</button>
+            >→ Record Enter Pass</button>
           </section><!-- /.roll-card-addpass -->
 
+          <!-- Far Side Ships Card - left column row 3 -->
+          <section class="card roll-card-farside" aria-labelledby="roll-far-side-title">
+            <h2 class="card-title" id="roll-far-side-title">Far Side Ships</h2>
+            <p style="font-size:0.78rem;color:var(--color-text-muted);margin-bottom:10px">
+              Pre-positioned scouts or ships already on the far side before rolling begins.
+            </p>
+
+            <div class="modal-form" style="margin-bottom:10px">
+              <div class="form-row">
+                <label class="form-label">Type</label>
+                <div class="toggle-group">
+                  <button :class="['btn btn-xs', farSideForm.mode === 'ship' ? 'btn-primary' : 'btn-secondary']"
+                          @click="farSideForm.mode = 'ship'">Fleet Ship</button>
+                  <button :class="['btn btn-xs', farSideForm.mode === 'custom' ? 'btn-primary' : 'btn-secondary']"
+                          @click="farSideForm.mode = 'custom'">Custom</button>
+                </div>
+              </div>
+
+              <template v-if="farSideForm.mode === 'ship'">
+                <div class="form-row">
+                  <label class="form-label">Ship</label>
+                  <select class="form-input" v-model="farSideForm.shipId">
+                    <option value="">— select ship —</option>
+                    <option v-for="s in ships" :key="s.id" :value="s.id">{{ s.name }}</option>
+                  </select>
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Pass Type</label>
+                  <div class="toggle-group">
+                    <button :class="['btn btn-xs', farSideForm.passType === 'cold' ? 'btn-primary' : 'btn-secondary']"
+                            @click="farSideForm.passType = 'cold'">❄ Cold</button>
+                    <button :class="['btn btn-xs', farSideForm.passType === 'hot' ? 'btn-primary' : 'btn-secondary']"
+                            @click="farSideForm.passType = 'hot'">♨ Hot</button>
+                  </div>
+                </div>
+                <div v-if="farSideSelectedShip && farSideShipMass > 0" class="form-row">
+                  <label class="form-label">Mass</label>
+                  <span class="form-hint">{{ fmtMass(farSideShipMass) }}</span>
+                </div>
+              </template>
+
+              <template v-else>
+                <div class="form-row">
+                  <label class="form-label">Label</label>
+                  <input class="form-input" type="text" placeholder="e.g. Tengu" v-model="farSideForm.customLabel">
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Mass ({{ massUnit }})</label>
+                  <input class="form-input" type="number" min="0"
+                         :step="unitStep" :placeholder="massUnit === 't' ? '0.000' : '0'"
+                         v-model.number="farSideCustomMassInput">
+                </div>
+              </template>
+
+              <button class="btn btn-primary btn-sm" :disabled="!canSubmitFarSide" @click="addFarSideShip">
+                Add Far Side Ship
+              </button>
+            </div>
+
+            <div v-if="farSideShips.length === 0" class="empty-state" style="padding:6px 0;font-size:0.82rem">
+              No far side ships defined.
+            </div>
+            <table v-else class="ship-table" aria-label="Far side ships">
+              <thead>
+                <tr>
+                  <th scope="col">Ship / Label</th>
+                  <th scope="col">Mass</th>
+                  <th scope="col"><span class="visually-hidden">Remove</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="f in farSideShips" :key="f.id">
+                  <td class="ship-name">{{ f.label }}</td>
+                  <td class="mass-value">{{ fmtMass(f.mass) }}</td>
+                  <td class="ship-actions">
+                    <button @click="removeFarSideShip(f.id)" class="btn btn-danger btn-xs">✕</button>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td><strong>Total reserved</strong></td>
+                  <td class="mass-value"><strong>{{ fmtMass(farSideMass) }}</strong></td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </section><!-- /.roll-card-farside -->
+
+          <!-- History Card - simple mode only, right column -->
+          <section v-if="!showPlan" class="card roll-card-history" aria-labelledby="history-title">
+            <div class="card-header">
+              <h2 class="card-title" id="history-title">Pass History</h2>
+              <div style="display:flex;align-items:center;gap:8px">
+                <button
+                  v-if="nextWhState"
+                  @click="advanceWhState"
+                  class="btn btn-sm plan-advance-state-btn"
+                  :title="`Mark wormhole as ${nextWhState}`"
+                >⇧ {{ nextWhState.charAt(0).toUpperCase() + nextWhState.slice(1) }}</button>
+                <button v-if="passes.length > 0" @click="clearPasses" class="btn btn-danger btn-sm">Clear</button>
+              </div>
+            </div>
+
+            <div v-if="historyDisplay.length === 0 && strandedManualShips.length === 0" class="empty-state">
+              No passes recorded yet. Use "Add Pass" to record ship transits.
+            </div>
+            <div class="plan-passes-list" role="list">
+              <template v-for="(row, i) in historyDisplay" :key="i">
+
+                <!-- State change marker -->
+                <div v-if="row.rowType === 'state-marker'" class="plan-threshold-sep is-state" style="display:flex;justify-content:space-between;align-items:center">
+                  <span>{{ row.label }}</span>
+                  <button @click="removePass(row.id)" class="btn btn-xs btn-danger" style="padding:1px 6px;font-size:0.7rem" :aria-label="`Remove ${row.label}`">✕</button>
+                </div>
+
+                <!-- Done pass -->
+                <div v-else-if="row.rowType === 'done'"
+                  :class="['plan-pass-item', 'is-done',
+                    row.direction === 'enter' ? 'is-enter' : row.direction === 'return' ? (row.isScout ? 'is-scout' : row.isFinal ? 'is-final' : 'is-return') : '']"
+                  role="listitem"
+                >
+                  <span class="plan-pass-dir">{{ row.direction === 'enter' ? '→' : row.direction === 'return' ? '←' : '✓' }}</span>
+                  <span class="plan-pass-label">
+                    {{ row.label }}
+                    <span v-if="row.isScout" class="plan-scout-badge">SCOUT</span>
+                  </span>
+                  <span class="plan-pass-mass">{{ fmtMass(row.mass) }}</span>
+                  <span class="plan-pass-remaining" :class="row.pct >= 100 ? 'is-collapsed' : row.pct >= 90 ? 'is-critical' : row.pct >= 50 ? 'is-reduced' : ''">{{ fmtMass(row.remainingMass) }}</span>
+                  <span class="plan-pass-pct" :class="row.pct >= 100 ? 'is-collapsed' : row.pct >= 90 ? 'is-critical' : row.pct >= 50 ? 'is-reduced' : ''">{{ row.pct.toFixed(0) }}%</span>
+                  <button @click="removePass(row.id)" class="btn btn-xs btn-danger" :aria-label="`Remove pass ${row.label}`" style="margin-left:4px">✕</button>
+                </div>
+
+                <!-- Group header (done plan-pass groups) -->
+                <div v-else-if="row.rowType === 'group-header'" :class="['plan-group-header', 'is-done', { 'is-stranded': row.groupType === 'stranded' }]">
+                  <span class="plan-group-num">
+                    <span v-if="row.groupType === 'stranded'">⚠ Extract Far-Side Ships</span>
+                    <span v-else-if="row.groupType === 'final'">Final Group</span>
+                    <span v-else>Group {{ row.groupNum }}</span>
+                  </span>
+                  <span class="plan-group-pilots">
+                    {{ row.pilotCount }}
+                    <template v-if="row.groupType === 'stranded'">{{ row.pilotCount === 1 ? 'Ship' : 'Ships' }}</template>
+                    <template v-else>{{ row.pilotCount === 1 ? 'Pilot' : 'Pilots' }}</template>
+                  </span>
+                </div>
+
+                <!-- Phase header (→ Enter / ← Return) -->
+                <div v-else-if="row.rowType === 'phase-header'"
+                  :class="['plan-phase-header', 'is-done', 'is-' + (row.direction === 'enter' ? 'enter' : 'return')]"
+                >
+                  <span v-if="row.direction === 'enter'">→ Enter</span>
+                  <span v-else-if="row.direction === 'scout-return' && row.isStranded">← Exit Far Side</span>
+                  <span v-else-if="row.direction === 'scout-return'">← Scouts Return</span>
+                  <span v-else>← Return</span>
+                </div>
+
+              </template>
+
+              <!-- Stranded ships section: ships currently on far side that need to exit -->
+              <template v-if="strandedShipsWithExitOpts.length > 0">
+                <div class="plan-group-header is-stranded">
+                  <span class="plan-group-num">⚠ Extract Far-Side Ships</span>
+                  <span class="plan-group-pilots">{{ strandedShipsWithExitOpts.length }} {{ strandedShipsWithExitOpts.length === 1 ? 'Ship' : 'Ships' }}</span>
+                </div>
+                <div class="plan-phase-header is-return">← Exit Far Side · {{ strandedShipsWithExitOpts.length }}</div>
+                <div
+                  v-for="(ship, idx) in strandedShipsWithExitOpts"
+                  :key="ship.passId"
+                  class="plan-pass-item is-scout"
+                  role="listitem"
+                >
+                  <span class="plan-pass-dir">←</span>
+                  <span class="plan-pass-label">{{ ship.name }}</span>
+                  <span class="plan-pass-mass">{{ fmtMass(ship.exitMass) }}</span>
+                  <span class="plan-pass-remaining" :class="ship.remainingAfterExit <= 0 ? 'is-collapsed' : (wormhole.totalMass - ship.remainingAfterExit) / wormhole.totalMass >= 0.9 ? 'is-critical' : (wormhole.totalMass - ship.remainingAfterExit) / wormhole.totalMass >= 0.5 ? 'is-reduced' : ''">
+                    {{ fmtMass(ship.remainingAfterExit) }}
+                  </span>
+                  <span v-if="ship.canToggle" style="display:flex;gap:3px;justify-content:flex-end">
+                    <button
+                      :class="['btn btn-xs', ship.passType === 'cold' ? 'btn-primary' : 'btn-secondary']"
+                      @click.stop="toggleStrandedExitType(ship.passId)"
+                      title="Cold pass"
+                    >❄</button>
+                    <button
+                      :class="['btn btn-xs', ship.passType === 'hot' ? 'btn-primary' : 'btn-secondary']"
+                      @click.stop="toggleStrandedExitType(ship.passId)"
+                      title="Hot pass"
+                    >♨</button>
+                  </span>
+                  <span v-else></span>
+                  <button
+                    @click="recordExitPass(ship)"
+                    class="btn btn-xs btn-primary"
+                    title="Record this ship returning through the wormhole"
+                  >← Exit</button>
+                </div>
+              </template>
+
+            </div>
+          </section><!-- /.roll-card-history -->
+
           <!-- Plan Card - right column -->
-          <section class="card roll-card-plan" aria-labelledby="plan-title">
+          <section v-if="showPlan" class="card roll-card-plan" aria-labelledby="plan-title">
             <div class="card-header">
               <div>
                 <h2 class="card-title" id="plan-title">Rolling Plan</h2>
@@ -528,8 +741,8 @@
                   />
                 </label>
                 <div class="plan-view-tabs" role="group">
-                  <button class="pass-type-tab" :class="{ active: activePlanView === 'worst' }" @click="activePlanView = 'worst'">⬆ Max Mass</button>
                   <button class="pass-type-tab" :class="{ active: activePlanView === 'best' }" @click="activePlanView = 'best'">⬇ Min Mass</button>
+                  <button class="pass-type-tab" :class="{ active: activePlanView === 'worst' }" @click="activePlanView = 'worst'">⬆ Max Mass</button>
                 </div>
                 <button v-if="passes.length > 0" @click="clearPasses" class="btn btn-danger btn-sm">Clear</button>
               </div>
@@ -592,29 +805,45 @@
 
                     <!-- Done pass (recorded) -->
                     <div v-else-if="row.rowType === 'done'"
-                      class="plan-pass-item is-done"
+                      :class="['plan-pass-item', 'is-done',
+                        row.direction === 'enter' ? 'is-enter' : row.direction === 'return' ? (row.isScout ? 'is-scout' : row.isFinal ? 'is-final' : 'is-return') : '']"
                       role="listitem"
                     >
-                      <span class="plan-pass-n">✓</span>
-                      <span class="plan-pass-label">{{ row.label }}</span>
+                      <span class="plan-pass-dir">{{ row.direction === 'enter' ? '→' : row.direction === 'return' ? '←' : '✓' }}</span>
+                      <span class="plan-pass-label">
+                        {{ row.label }}
+                        <span v-if="row.isScout" class="plan-scout-badge">SCOUT</span>
+                        <span v-if="row.isFinal" class="plan-collapse-icon">⊗</span>
+                      </span>
                       <span class="plan-pass-mass">{{ fmtMass(row.mass) }}</span>
-                      <span class="plan-pass-remaining">{{ fmtMass(row.totalThrough) }}</span>
+                      <span class="plan-pass-remaining" :class="row.pct >= 100 ? 'is-collapsed' : row.pct >= 90 ? 'is-critical' : row.pct >= 50 ? 'is-reduced' : ''">{{ fmtMass(row.remainingMass) }}</span>
+                      <span class="plan-pass-pct" :class="row.pct >= 100 ? 'is-collapsed' : row.pct >= 90 ? 'is-critical' : row.pct >= 50 ? 'is-reduced' : ''">{{ row.pct.toFixed(0) }}%</span>
                       <button @click="removePass(row.id)" class="btn btn-xs btn-danger" :aria-label="`Remove pass ${row.label}`" style="margin-left:4px">✕</button>
                     </div>
 
                     <!-- Group header (e.g. "Group 1 · 2 Pilots") -->
-                    <div v-else-if="row.rowType === 'group-header'" class="plan-group-header">
-                      <span class="plan-group-num">{{ row.groupType === 'final' ? 'Final Group' : 'Group ' + row.groupNum }}</span>
-                      <span class="plan-group-pilots">{{ row.pilotCount }} {{ row.pilotCount === 1 ? 'Pilot' : 'Pilots' }}</span>
+                    <div v-else-if="row.rowType === 'group-header'" :class="['plan-group-header', { 'is-done': row.isDone, 'is-stranded': row.groupType === 'stranded' }]">
+                      <span class="plan-group-num">
+                        <span v-if="row.isDone" class="plan-group-done-icon">✓</span>
+                        <span v-if="row.groupType === 'stranded'">⚠ Extract Far-Side Ships</span>
+                        <span v-else-if="row.groupType === 'final'">Final Group</span>
+                        <span v-else>Group {{ row.groupNum }}</span>
+                      </span>
+                      <span class="plan-group-pilots">
+                        {{ row.pilotCount }}
+                        <template v-if="row.groupType === 'stranded'">{{ row.pilotCount === 1 ? 'Ship' : 'Ships' }}</template>
+                        <template v-else>{{ row.pilotCount === 1 ? 'Pilot' : 'Pilots' }}</template>
+                      </span>
                     </div>
 
                     <!-- Phase header (→ Enter / ← Scouts Return / ← Return) -->
                     <div v-else-if="row.rowType === 'phase-header'"
-                      :class="['plan-phase-header', 'is-' + (row.direction === 'enter' ? 'enter' : 'return')]"
+                      :class="['plan-phase-header', row.isDone ? 'is-done' : '', 'is-' + (row.direction === 'enter' ? 'enter' : 'return')]"
                     >
-                      <span v-if="row.direction === 'enter'">→ Enter · {{ row.count }} {{ row.count === 1 ? 'pilot' : 'pilots' }}</span>
-                      <span v-else-if="row.direction === 'scout-return'">← Scouts Return · {{ row.count }}</span>
-                      <span v-else>← Return · {{ row.count }} {{ row.count === 1 ? 'pilot' : 'pilots' }}</span>
+                      <span v-if="row.direction === 'enter'">→ Enter<template v-if="row.count != null"> · {{ row.count }} {{ row.count === 1 ? 'pilot' : 'pilots' }}</template></span>
+                      <span v-else-if="row.direction === 'scout-return' && row.isStranded">← Exit Far Side<template v-if="row.count != null"> · {{ row.count }}</template></span>
+                      <span v-else-if="row.direction === 'scout-return'">← Scouts Return<template v-if="row.count != null"> · {{ row.count }}</template></span>
+                      <span v-else>← Return<template v-if="row.count != null"> · {{ row.count }} {{ row.count === 1 ? 'pilot' : 'pilots' }}</template></span>
                     </div>
 
                     <!-- Planned rolling pass -->
@@ -638,11 +867,32 @@
                         <span v-if="row.isFinal" class="plan-collapse-icon" :title="rollingTarget === 'critical' ? 'Wormhole enters critical state' : 'Wormhole collapses'">⊗</span>
                       </span>
                       <span class="plan-pass-mass">{{ fmtMass(row.mass) }}</span>
+                      <span class="plan-pass-remaining" :class="row.pct >= 100 ? 'is-collapsed' : row.pct >= 90 ? 'is-critical' : row.pct >= 50 ? 'is-reduced' : ''">
+                        {{ fmtMass(row.remainingMass) }}
+                      </span>
                       <span class="plan-pass-pct" :class="row.pct >= 100 ? 'is-collapsed' : row.pct >= 90 ? 'is-critical' : row.pct >= 50 ? 'is-reduced' : ''">
                         {{ row.pct.toFixed(0) }}%
                       </span>
+                      <span v-if="row.canToggle" style="display:flex;gap:3px;align-items:center;justify-content:flex-end">
+                        <button
+                          :class="['btn btn-xs', row.passType === 'cold' ? 'btn-primary' : 'btn-secondary']"
+                          @click.stop="togglePlanPassType(row.globalIdx)"
+                          title="Cold pass"
+                        >❄</button>
+                        <button
+                          :class="['btn btn-xs', row.passType === 'hot' ? 'btn-primary' : 'btn-secondary']"
+                          @click.stop="togglePlanPassType(row.globalIdx)"
+                          title="Hot pass"
+                        >♨</button>
+                        <button
+                          v-if="row.isNext"
+                          @click="recordPlanPass(row)"
+                          class="btn btn-xs btn-primary plan-pass-record-btn"
+                          title="Record this pass"
+                        >✓</button>
+                      </span>
                       <button
-                        v-if="row.isNext"
+                        v-else-if="row.isNext"
                         @click="recordPlanPass(row)"
                         class="btn btn-xs btn-primary plan-pass-record-btn"
                         title="Record this pass"

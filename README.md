@@ -72,12 +72,103 @@ Download `eve-wormhole-roller.html` from the [latest release](https://github.com
 - Ships too heavy for the configured wormhole size are flagged with a warning before recording.
 - Remove individual passes or clear all to reset the session.
 
-### Calculator Tab
+### Calculator Tab (Roll Plan)
 - Calculates the optimal (fewest passes, even count) sequence to collapse the wormhole.
-- **Best Case** — 0% variance: wormhole is exactly as described (fewest passes needed).
-- **Worst Case** — 10% variance: wormhole has 10% more mass than shown (most passes needed).
+- **Min Mass** — 0% variance: wormhole is exactly as described (fewest passes needed).
+- **Max Mass** — 10% variance: wormhole has 10% more mass than shown (most passes needed).
 - Calculated off the main thread — a spinner is shown while computing; no browser freezing.
 - Ships excluded by the wormhole size setting are listed and removed from plan options.
+- Far-side ships (scouts) and stranded ships are accounted for before the rolling plan begins.
+- Each planned pass can be overridden between hot and cold; the plan updates downstream mass in real time.
+
+## Rolling Plan Algorithm
+
+The rolling plan is computed in a Web Worker to keep the UI responsive. It runs for both the
+**min-mass** (0% variance) and **max-mass** (10% variance) scenarios simultaneously.
+
+### Goal
+
+Produce the shortest sequence of wormhole transits (passes) that:
+1. Brings total mass passed through the wormhole into its **collapse window** (100–110% of displayed mass), and
+2. Ensures **every pilot that goes through also comes back** — no one is left stranded.
+
+### Structure
+
+The plan is divided into **groups**:
+
+| Group type | Purpose |
+|---|---|
+| **Stranded** | Ships already on the far side that must return before any new pilots enter |
+| **Bulk** | Full N-pilot round-trips — all pilots enter and return with the heavy ship |
+| **Final** | Mixed sequence: extra round-trips + final ship cold enter + scout returns + hot collapse pass |
+
+The final group's last pass is always a **hot return** that tips the wormhole into its collapse range.
+
+### Algorithm Steps
+
+```
+For each candidate "final ship" (sorted heaviest-hot-mass first):
+
+  1. Compute beforeHotBase = finalShip.coldMass + scoutMassTotal
+     (mass consumed before the collapse pass)
+
+  2. Compute the bulk mass window [M_min, M_max] such that:
+       bulk + beforeHotBase  <  targetCapacity        (WH still open after scouts return)
+       bulk + beforeHotBase + finalShip.hotMass  >=   targetCapacity  (hot return collapses it)
+
+  3. Find minimum K bulk round-trips whose total mass lands in [M_min, M_max].
+     Each round-trip is one of:
+       hot/hot   = 2 × hotMass   (heaviest)
+       hot/cold  = hotMass + coldMass  (mix)
+       cold/cold = 2 × coldMass  (lightest)
+     Strategy: start all-hot, switch whole RTs to cold/cold as needed.
+     If granularity is too coarse, add one hot/cold "mix" RT.
+
+  4. Distribute K round-trips across N-pilot bulk groups + the final group.
+       M full bulk groups  = floor(K / N)   — each group: N pilots, N enters + N returns
+       extraRTs            = K mod N        — go into the final group
+
+  5. Keep the result with the fewest total passes.
+```
+
+### Mermaid Flow
+
+```mermaid
+flowchart TD
+    A([Start]) --> B{targetCapacity ≤ 0?}
+    B -- Yes --> DONE_C([Already collapsed])
+    B -- No --> C[Sort ships by hotMass desc]
+    C --> D[For each candidate finalShip]
+    D --> E{beforeHotBase ≥ target?}
+    E -- Yes, skip --> D
+    E -- No --> F[Compute M_min / M_max bulk window]
+    F --> G{M_max < 0?}
+    G -- Yes, skip --> D
+    G -- No --> H[Compute kMin = ⌈M_min / maxRT⌉]
+    H --> I[Try K = kMin … kMin+3]
+    I --> J[_findBulkConfig: find hot/mix/cold RT mix\nthat lands bulk mass in window]
+    J --> K{Config found?}
+    K -- No, next K --> I
+    K -- Yes --> L[_makeGroups: split K into\nbulk groups + final group]
+    L --> M{Fewer passes\nthan best so far?}
+    M -- Yes --> N[Update bestResult]
+    M -- No --> D
+    N --> D
+    D -- All ships tried --> O{bestResult?}
+    O -- No --> DONE_I([Impossible])
+    O -- Yes --> P[Prepend stranded-ship\nextraction group if needed]
+    P --> DONE_P([Return plan])
+```
+
+### Mass Budget Tracking
+
+The app tracks consumed mass using `effectiveUsedMass`, which is the larger of:
+- Sum of all recorded pass masses, or
+- The state-floor for the observed wormhole status (50% for Reduced, 90% for Critical) plus any passes recorded after the last state observation.
+
+This ensures that observing a wormhole state change (e.g. "Reduced") immediately shrinks the remaining plan, even if fewer passes have been recorded than the threshold implies.
+
+Pre-configured far-side (scout) ships and stranded manual ships are subtracted from the remaining budget before the plan is sent to the worker, so the rolling sequence only accounts for mass the pilots actually need to transit.
 
 ## Notes
 

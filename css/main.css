@@ -594,6 +594,7 @@ input[type="number"] { -moz-appearance: textfield; }
   transition: all var(--transition);
   min-height: 44px;
   text-align: center;
+  white-space: nowrap;
 }
 
 .pass-type-tab:not(.active):hover {
@@ -715,7 +716,7 @@ input[type="number"] { -moz-appearance: textfield; }
 
 .plan-pass-item {
   display: grid;
-  grid-template-columns: 20px 1fr auto auto;
+  grid-template-columns: 20px 1fr auto auto auto auto;
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
@@ -767,7 +768,6 @@ input[type="number"] { -moz-appearance: textfield; }
 .plan-pass-item.is-done {
   opacity: 0.55;
   border-left-color: var(--color-border-bright);
-  grid-template-columns: 20px 1fr auto auto auto;
   pointer-events: auto;
 }
 
@@ -779,7 +779,6 @@ input[type="number"] { -moz-appearance: textfield; }
 .plan-pass-item.is-next {
   border-left: 2px solid var(--color-accent);
   background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card));
-  grid-template-columns: 20px 1fr auto auto auto;
   opacity: 1;
 }
 
@@ -852,6 +851,26 @@ input[type="number"] { -moz-appearance: textfield; }
   margin-top: 0;
 }
 
+.plan-group-header.is-done {
+  opacity: 0.55;
+  border-bottom-color: var(--color-border);
+}
+
+.plan-group-header.is-stranded {
+  border-bottom-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.plan-group-header.is-stranded .plan-group-num {
+  color: var(--color-warning);
+}
+
+.plan-group-done-icon {
+  margin-right: 4px;
+  color: var(--color-success, #4caf50);
+  font-size: 0.7rem;
+}
+
 .plan-group-num {
   font-size: 0.72rem;
   font-weight: 700;
@@ -879,6 +898,7 @@ input[type="number"] { -moz-appearance: textfield; }
 
 .plan-phase-header.is-enter  { color: var(--color-accent); }
 .plan-phase-header.is-return { color: var(--color-text-muted); }
+.plan-phase-header.is-done   { opacity: 0.55; }
 
 /* Pilots count control in plan card header */
 .plan-pilots-control {
@@ -888,8 +908,9 @@ input[type="number"] { -moz-appearance: textfield; }
 }
 
 .plan-pilots-label {
-  font-size: 0.72rem;
-  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
   white-space: nowrap;
 }
 
@@ -975,12 +996,6 @@ input[type="number"] { -moz-appearance: textfield; }
 .plan-threshold-sep.is-critical  { color: var(--color-warning); }
 .plan-threshold-sep.is-collapsed { color: var(--color-danger); }
 
-.plan-pass-n {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: var(--color-text-muted);
-  text-align: right;
-}
 
 .plan-pass-label {
   color: var(--color-text-primary);
@@ -1000,6 +1015,10 @@ input[type="number"] { -moz-appearance: textfield; }
   color: var(--color-text-muted);
   white-space: nowrap;
 }
+
+.plan-pass-remaining.is-reduced   { color: var(--color-text-secondary); }
+.plan-pass-remaining.is-critical  { color: var(--color-warning); }
+.plan-pass-remaining.is-collapsed { color: var(--color-danger); }
 
 .plan-footer {
   padding: 10px 14px;
@@ -1094,6 +1113,14 @@ input[type="number"] { -moz-appearance: textfield; }
 .text-muted   { color: var(--color-text-muted); }
 .font-mono    { font-family: var(--font-mono); }
 
+/* ── Roll Tab Toolbar ────────────────────────────────────── */
+.roll-tab-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
 /* ── Responsive: Tablet and Desktop ───────────────────────── */
 @media (min-width: 768px) {
   .app-main {
@@ -1101,7 +1128,7 @@ input[type="number"] { -moz-appearance: textfield; }
   }
 
   .mass-stats-grid {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   }
 }
 
@@ -1120,14 +1147,21 @@ input[type="number"] { -moz-appearance: textfield; }
   .roll-tab-content {
     display: grid;
     grid-template-columns: 380px 1fr;
-    grid-template-rows: auto auto 1fr;
+    grid-template-rows: auto auto auto 1fr;
     gap: 16px;
     align-items: start;
   }
 
   .roll-card-mass    { grid-column: 1; grid-row: 1; }
   .roll-card-addpass { grid-column: 1; grid-row: 2; }
-  .roll-card-plan    { grid-column: 2; grid-row: 1 / span 3; }
+  .roll-card-farside { grid-column: 1; grid-row: 3; }
+  .roll-card-plan    { grid-column: 2; grid-row: 1 / span 5; }
+  .roll-card-history { grid-column: 2; grid-row: 1 / span 5; }
+
+  /* In the narrow left column the 5-up grid smushes. Use 2×2 instead. */
+  .roll-card-mass .mass-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* ── Responsive: Mobile ───────────────────────────────────── */
