@@ -1834,8 +1834,11 @@ input[type="number"] { -moz-appearance: textfield; }
 }
 
 /* ── Wormhole Type Typeahead ──────────────────────────────── */
-.wh-type-input-wrap {
+.wh-type-combobox {
   position: relative;
+}
+
+.wh-type-input-wrap {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1843,6 +1846,7 @@ input[type="number"] { -moz-appearance: textfield; }
 
 .wh-type-input-wrap .form-input {
   flex: 1;
+  min-width: 0;
 }
 
 .wh-type-custom-badge {
@@ -1869,6 +1873,77 @@ input[type="number"] { -moz-appearance: textfield; }
 @keyframes wh-type-pulse {
   0%, 100% { opacity: 0.4; }
   50%       { opacity: 1; }
+}
+
+.wh-type-dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: var(--color-surface-2, #1a1f2e);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+.wh-type-no-match {
+  max-height: unset;
+}
+
+.wh-type-group-header {
+  padding: 6px 10px 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: var(--color-surface-3, #1e2435);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+}
+
+.wh-type-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 5px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  gap: 8px;
+}
+
+.wh-type-option:hover,
+.wh-type-option.is-active {
+  background: color-mix(in srgb, var(--color-accent, #5599ff) 15%, transparent);
+  color: var(--color-text);
+}
+
+.wh-type-option-name {
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.wh-type-option-size {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.wh-type-loading {
+  padding: 8px 12px;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
 }
 
 /* ── Setup Tab Layout ─────────────────────────────────────── */
@@ -2381,28 +2456,52 @@ body, .card, .app-header, .tab-nav, .modal {
           <div class="modal-form">
             <label class="form-label">
               Wormhole Type
-              <div class="wh-type-input-wrap">
-                <input
-                  v-model="wormhole.typeName"
-                  list="wh-types-datalist"
-                  class="form-input"
-                  :placeholder="whTypesFetching ? 'Loading wormhole types…' : 'e.g. Z971 — type or scroll to select'"
-                  :disabled="whTypesFetching && whTypeData.length === 0"
-                  autocomplete="off"
-                  spellcheck="false"
-                  @change="onWhTypeChange"
-                >
-                <datalist id="wh-types-datalist">
-                  <option v-for="t in whTypeData" :value="t.name" :key="t.typeId"></option>
-                </datalist>
-                <span v-if="whTypeIsCustom && !whTypesFetching" class="wh-type-custom-badge" title="Custom value — mass and size not auto-populated from EVE data">ⓘ</span>
-                <span v-if="whTypeFetching || whTypesFetching" class="wh-type-fetching" :title="whTypesFetching ? 'Loading wormhole type list…' : 'Loading wormhole data…'">⋯</span>
-                <button
-                  class="btn btn-secondary btn-sm wh-type-refresh-btn"
-                  :disabled="whTypesFetching"
-                  title="Refresh wormhole type list from EVE ESI (useful after EVE updates)"
-                  @click.prevent="refreshWhTypes"
-                >↺</button>
+              <div class="wh-type-combobox">
+                <div class="wh-type-input-wrap">
+                  <input
+                    :value="whTypeSearch"
+                    @input="whTypeSearch = $event.target.value; whDropdownOpen = true; whDropdownIdx = -1"
+                    @focus="openWhDropdown"
+                    @blur="onWhInputBlur"
+                    @keydown="onWhDropdownKey"
+                    class="form-input"
+                    :placeholder="whTypesFetching ? 'Loading wormhole types…' : 'e.g. Z971 — type or scroll to select'"
+                    :disabled="whTypesFetching && whTypeData.length === 0"
+                    autocomplete="off"
+                    spellcheck="false"
+                    aria-haspopup="listbox"
+                    :aria-expanded="whDropdownOpen"
+                  >
+                  <span v-if="whTypeIsCustom" class="wh-type-custom-badge" title="Custom value — mass and size not auto-populated from EVE data">ⓘ</span>
+                  <span v-if="whTypeFetching || whTypesFetching" class="wh-type-fetching" :title="whTypesFetching ? 'Loading wormhole type list…' : 'Loading wormhole data…'">⋯</span>
+                  <button
+                    class="btn btn-secondary btn-sm wh-type-refresh-btn"
+                    :disabled="whTypesFetching"
+                    title="Refresh wormhole type list from EVE ESI (useful after EVE updates)"
+                    @click.prevent="refreshWhTypes"
+                  >↺</button>
+                </div>
+                <div v-if="whDropdownOpen && whFlatOptions.length > 0" class="wh-type-dropdown" role="listbox">
+                  <template v-for="group in whFilteredGroups" :key="group.label">
+                    <div class="wh-type-group-header">{{ group.label }}</div>
+                    <button
+                      v-for="(type, ti) in group.types"
+                      :key="type.typeId"
+                      type="button"
+                      role="option"
+                      class="wh-type-option"
+                      :class="{ 'is-active': whFlatOptions.indexOf(type) === whDropdownIdx }"
+                      @mousedown.prevent="selectWhType(type)"
+                    >
+                      <span class="wh-type-option-name">{{ type.name }}</span>
+                      <span class="wh-type-option-size">{{ whSizeLabel(type.maxJumpMass) }}</span>
+                    </button>
+                  </template>
+                  <div v-if="whTypesFetching" class="wh-type-loading">Loading…</div>
+                </div>
+                <div v-else-if="whDropdownOpen && whTypeSearch && !whTypesFetching && whFlatOptions.length === 0" class="wh-type-dropdown wh-type-no-match" role="listbox">
+                  <div class="wh-type-group-header">No matching wormhole types</div>
+                </div>
               </div>
             </label>
             <label class="form-label">
@@ -3379,6 +3478,7 @@ const STORAGE_WH_TYPES       = 'eve-whr-wh-types-v1'; // cached wormhole type li
 const ESI_ATTR_WH_MAX_STABLE_TIME  = 1381; // Max wormhole lifetime (hours)
 const ESI_ATTR_WH_MASS_REGEN       = 1382; // Mass regeneration (not used in app)
 const ESI_ATTR_WH_MAX_STABLE_MASS  = 1383; // Total mass the wormhole accepts before collapsing (kg) → maps to "Total Mass" field
+const ESI_ATTR_WH_DEST_CLASS       = 1457; // Destination system class ID (296=C1 … 304=NS) → used for dropdown grouping
 const ESI_ATTR_WH_MAX_JUMP_MASS    = 1385; // Max mass of a single ship that can jump through (kg) → maps to "Wormhole Size" field
 
 // How long to keep the ESI wormhole type list in localStorage before re-fetching (1 day)
@@ -3728,10 +3828,37 @@ createApp({
     /** True if a mass (kg) fits through the configured wormhole size. */
     function massFits(kg) { return !whSizeLimit.value || kg <= whSizeLimit.value; }
 
-    // ── Wormhole Type (ESI typeahead) ─────────────────────────────────────────
-    // whTypeData: array of {name, typeId} — loaded from localStorage cache or fetched from ESI.
-    // Cache structure: { data: [{name, typeId}], fetchedAt: timestamp }
-    const whTypeData     = ref([]);
+    // ── Wormhole Type (ESI typeahead combobox) ───────────────────────────────
+    // Destination class mapping: dogma attribute 1457 → display label + sort order.
+    // These values come from the EVE SDE wormholeClassID field, confirmed via ESI.
+    const WH_DEST_CLASSES = {
+      296: { label: 'C1 — Class 1',           short: 'C1', order: 1 },
+      297: { label: 'C2 — Class 2',           short: 'C2', order: 2 },
+      298: { label: 'C3 — Class 3',           short: 'C3', order: 3 },
+      299: { label: 'C4 — Class 4',           short: 'C4', order: 4 },
+      300: { label: 'C5 — Class 5',           short: 'C5', order: 5 },
+      301: { label: 'C6 — Class 6',           short: 'C6', order: 6 },
+      302: { label: 'HS — High Security',     short: 'HS', order: 7 },
+      303: { label: 'LS — Low Security',      short: 'LS', order: 8 },
+      304: { label: 'NS — Null Security',     short: 'NS', order: 9 },
+      305: { label: 'Thera',                  short: 'Thera', order: 10 },
+      306: { label: 'Drifter',                short: 'Drifter', order: 11 },
+      309: { label: 'Pochven',                short: 'Pochven', order: 12 },
+    };
+
+    // Size label derived from ESI_ATTR_WH_MAX_JUMP_MASS value
+    function whSizeLabel(maxJumpMass) {
+      if (!maxJumpMass) return '';
+      if (maxJumpMass <=     5_000_000) return 'Frigate';
+      if (maxJumpMass <=    62_000_000) return 'Medium';
+      if (maxJumpMass <=   375_000_000) return 'Large';
+      if (maxJumpMass <= 1_000_000_000) return 'XL';
+      return 'Carrier+';
+    }
+
+    // whTypeData: array of {name, typeId, destClass, maxJumpMass, maxStableMass}
+    // Cache structure in localStorage: { data: [...], fetchedAt: timestamp }
+    const whTypeData      = ref([]);
     const whTypesFetching = ref(false); // true while fetching the type list on load
 
     async function _fetchWhTypeList() {
@@ -3741,7 +3868,7 @@ createApp({
         const groupResp = await fetch('https://esi.evetech.net/latest/universe/groups/988/?datasource=tranquility');
         if (!groupResp.ok) return;
         const group = await groupResp.json();
-        const typeIds = group.types || [];
+        const typeIds = (group.types || []);
 
         // Step 2: resolve names in a single POST to /universe/names/
         const namesResp = await fetch('https://esi.evetech.net/latest/universe/names/?datasource=tranquility', {
@@ -3750,14 +3877,39 @@ createApp({
           body: JSON.stringify(typeIds),
         });
         if (!namesResp.ok) return;
-        const names = await namesResp.json();
+        const namesData = await namesResp.json();
+        const idToName = Object.fromEntries(
+          namesData.map(n => [n.id, n.name.replace(/^Wormhole\s+/, '').trim()])
+        );
 
-        // Strip "Wormhole " prefix to get the short in-game designation (e.g. "Z971")
-        const types = names
-          .map(n => ({ name: n.name.replace(/^Wormhole\s+/, '').trim(), typeId: n.id }))
-          .filter(t => t.name)
-          .sort((a, b) => a.name.localeCompare(b.name));
+        // Step 3: fetch type details in parallel batches to get destClass and mass attributes
+        const BATCH = 30;
+        const types = [];
+        for (let i = 0; i < typeIds.length; i += BATCH) {
+          const batch = typeIds.slice(i, i + BATCH);
+          const results = await Promise.all(batch.map(id =>
+            fetch(`https://esi.evetech.net/latest/universe/types/${id}/?datasource=tranquility`)
+              .then(r => r.ok ? r.json() : null)
+              .catch(() => null)
+          ));
+          for (const data of results) {
+            if (!data) continue;
+            const name = idToName[data.type_id];
+            if (!name) continue;
+            const attrMap = Object.fromEntries(
+              (data.dogma_attributes || []).map(a => [a.attribute_id, a.value])
+            );
+            types.push({
+              name,
+              typeId: data.type_id,
+              destClass:    attrMap[ESI_ATTR_WH_DEST_CLASS]      || 0,
+              maxJumpMass:  attrMap[ESI_ATTR_WH_MAX_JUMP_MASS]   || 0,
+              maxStableMass: attrMap[ESI_ATTR_WH_MAX_STABLE_MASS] || 0,
+            });
+          }
+        }
 
+        types.sort((a, b) => a.name.localeCompare(b.name));
         whTypeData.value = types;
         localStorage.setItem(STORAGE_WH_TYPES, JSON.stringify({ data: types, fetchedAt: Date.now() }));
       } catch (_) {
@@ -3772,12 +3924,43 @@ createApp({
       try {
         const cached = JSON.parse(localStorage.getItem(STORAGE_WH_TYPES) || 'null');
         if (cached?.data?.length && (Date.now() - cached.fetchedAt) < WH_TYPES_CACHE_TTL_MS) {
-          whTypeData.value = cached.data;
-          return;
+          // Cache may be old format (no destClass) — re-fetch if so
+          if (cached.data[0]?.destClass !== undefined) {
+            whTypeData.value = cached.data;
+            return;
+          }
         }
       } catch (_) { /* corrupt cache — fall through to fetch */ }
       _fetchWhTypeList();
     })();
+
+    // ── Custom combobox state ─────────────────────────────────────────────────
+    const whTypeSearch    = ref(wormhole.typeName); // what's currently typed in the input
+    const whDropdownOpen  = ref(false);
+    const whDropdownIdx   = ref(-1); // keyboard-highlighted item index in flat list
+
+    // Sync external changes to typeName back into the search input (e.g. session reset)
+    watch(() => wormhole.typeName, v => { if (v !== whTypeSearch.value) whTypeSearch.value = v; });
+
+    // Grouped and filtered list for the dropdown
+    const whFilteredGroups = computed(() => {
+      const q = whTypeSearch.value.trim().toLowerCase();
+      const filtered = q
+        ? whTypeData.value.filter(t => t.name.toLowerCase().includes(q))
+        : whTypeData.value;
+      const groupMap = new Map();
+      for (const t of filtered) {
+        const cls = WH_DEST_CLASSES[t.destClass] ?? { label: 'Other', short: '?', order: 99 };
+        if (!groupMap.has(t.destClass)) {
+          groupMap.set(t.destClass, { label: cls.label, short: cls.short, order: cls.order, types: [] });
+        }
+        groupMap.get(t.destClass).types.push(t);
+      }
+      return [...groupMap.values()].sort((a, b) => a.order - b.order);
+    });
+
+    // Flat ordered list of all visible options (for keyboard navigation)
+    const whFlatOptions = computed(() => whFilteredGroups.value.flatMap(g => g.types));
 
     // The matched type entry (null if no match or no value)
     const whTypeEntry    = computed(() => whTypeData.value.find(t => t.name === wormhole.typeName) ?? null);
@@ -3795,16 +3978,64 @@ createApp({
       return type || name || null;
     });
 
-    async function onWhTypeChange() {
-      const typeId = whTypeId.value;
-      if (!typeId) return; // custom or empty — don't fetch
+    function openWhDropdown() {
+      whDropdownOpen.value = true;
+      whDropdownIdx.value = -1;
+    }
+
+    function onWhInputBlur() {
+      // Delay so that @mousedown.prevent on items fires before the dropdown hides
+      setTimeout(() => {
+        wormhole.typeName = whTypeSearch.value.trim();
+        whDropdownOpen.value = false;
+        whDropdownIdx.value = -1;
+      }, 150);
+    }
+
+    function onWhDropdownKey(e) {
+      const flat = whFlatOptions.value;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        whDropdownOpen.value = true;
+        whDropdownIdx.value = Math.min(whDropdownIdx.value + 1, flat.length - 1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        whDropdownIdx.value = Math.max(whDropdownIdx.value - 1, 0);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const idx = whDropdownIdx.value;
+        if (idx >= 0 && idx < flat.length) {
+          selectWhType(flat[idx]);
+        } else if (flat.length === 1) {
+          selectWhType(flat[0]);
+        } else {
+          wormhole.typeName = whTypeSearch.value.trim();
+          whDropdownOpen.value = false;
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        whDropdownOpen.value = false;
+      }
+    }
+
+    function selectWhType(entry) {
+      wormhole.typeName   = entry.name;
+      whTypeSearch.value  = entry.name;
+      whDropdownOpen.value = false;
+      whDropdownIdx.value  = -1;
+      onWhTypeChange(entry.typeId);
+    }
+
+    async function onWhTypeChange(typeId) {
+      const id = typeId ?? whTypeId.value;
+      if (!id) return; // custom or empty — don't fetch
       whTypeFetching.value = true;
       try {
-        const resp = await fetch(`https://esi.evetech.net/latest/universe/types/${typeId}/?datasource=tranquility`);
+        const resp = await fetch(`https://esi.evetech.net/latest/universe/types/${id}/?datasource=tranquility`);
         if (!resp.ok) return;
         const data = await resp.json();
         const attrs = data.dogma_attributes || [];
-        const getAttr = id => attrs.find(a => a.attribute_id === id)?.value ?? null;
+        const getAttr = attrId => attrs.find(a => a.attribute_id === attrId)?.value ?? null;
 
         const totalMass   = getAttr(ESI_ATTR_WH_MAX_STABLE_MASS);
         const maxJumpMass = getAttr(ESI_ATTR_WH_MAX_JUMP_MASS);
@@ -3825,11 +4056,6 @@ createApp({
         whTypeFetching.value = false;
       }
     }
-
-    // Also trigger ESI fetch when typeName changes to a known type via keyboard (datalist selection)
-    watch(() => wormhole.typeName, () => {
-      if (whTypeEntry.value) onWhTypeChange();
-    });
 
     // ── Mass Computeds ───────────────────────────────────────────────────────
     const usedMass = computed(() => passes.value.reduce((s, p) => s + p.mass, 0));
@@ -4198,7 +4424,7 @@ createApp({
         passes.value = []; farSideShips.value = [];
         wormhole.name = ''; wormhole.totalMass = 0;
         wormhole.status = 'stable'; wormhole.size = '';
-        wormhole.typeName = '';
+        wormhole.typeName = ''; whTypeSearch.value = '';
       }
     }
 
@@ -4524,6 +4750,8 @@ createApp({
       whTotalMassInput, draftColdInput, draftHotInput, customMassInput,
       whTypeData, whTypeId, whTypeIsCustom, whTypeFetching, whTypesFetching, whDisplayName, onWhTypeChange,
       refreshWhTypes: () => _fetchWhTypeList(),
+      whTypeSearch, whDropdownOpen, whDropdownIdx, whFilteredGroups, whFlatOptions,
+      openWhDropdown, onWhInputBlur, onWhDropdownKey, selectWhType, whSizeLabel,
       applyTheme, fmtMass, massFits,
       addPass, removePass, clearPasses, resetSession, recordPlanPass, advanceWhState, nextWhState,
       addFarSideShip, removeFarSideShip,
