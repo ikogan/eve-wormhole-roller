@@ -22,6 +22,7 @@ const STORAGE_WH_TYPES       = 'eve-whr-wh-types-v1'; // cached wormhole type li
 const ESI_ATTR_WH_MAX_STABLE_TIME  = 1381; // Max wormhole lifetime (hours)
 const ESI_ATTR_WH_MASS_REGEN       = 1382; // Mass regeneration (not used in app)
 const ESI_ATTR_WH_MAX_STABLE_MASS  = 1383; // Total mass the wormhole accepts before collapsing (kg) → maps to "Total Mass" field
+const ESI_ATTR_WH_DEST_CLASS       = 1457; // Destination system class ID (296=C1 … 304=NS) → used for dropdown grouping
 const ESI_ATTR_WH_MAX_JUMP_MASS    = 1385; // Max mass of a single ship that can jump through (kg) → maps to "Wormhole Size" field
 
 // How long to keep the ESI wormhole type list in localStorage before re-fetching (1 day)
@@ -371,10 +372,37 @@ createApp({
     /** True if a mass (kg) fits through the configured wormhole size. */
     function massFits(kg) { return !whSizeLimit.value || kg <= whSizeLimit.value; }
 
-    // ── Wormhole Type (ESI typeahead) ─────────────────────────────────────────
-    // whTypeData: array of {name, typeId} — loaded from localStorage cache or fetched from ESI.
-    // Cache structure: { data: [{name, typeId}], fetchedAt: timestamp }
-    const whTypeData     = ref([]);
+    // ── Wormhole Type (ESI typeahead combobox) ───────────────────────────────
+    // Destination class mapping: dogma attribute 1457 → display label + sort order.
+    // These values come from the EVE SDE wormholeClassID field, confirmed via ESI.
+    const WH_DEST_CLASSES = {
+      296: { label: 'C1 — Class 1',           short: 'C1', order: 1 },
+      297: { label: 'C2 — Class 2',           short: 'C2', order: 2 },
+      298: { label: 'C3 — Class 3',           short: 'C3', order: 3 },
+      299: { label: 'C4 — Class 4',           short: 'C4', order: 4 },
+      300: { label: 'C5 — Class 5',           short: 'C5', order: 5 },
+      301: { label: 'C6 — Class 6',           short: 'C6', order: 6 },
+      302: { label: 'HS — High Security',     short: 'HS', order: 7 },
+      303: { label: 'LS — Low Security',      short: 'LS', order: 8 },
+      304: { label: 'NS — Null Security',     short: 'NS', order: 9 },
+      305: { label: 'Thera',                  short: 'Thera', order: 10 },
+      306: { label: 'Drifter',                short: 'Drifter', order: 11 },
+      309: { label: 'Pochven',                short: 'Pochven', order: 12 },
+    };
+
+    // Size label derived from ESI_ATTR_WH_MAX_JUMP_MASS value
+    function whSizeLabel(maxJumpMass) {
+      if (!maxJumpMass) return '';
+      if (maxJumpMass <=     5_000_000) return 'Frigate';
+      if (maxJumpMass <=    62_000_000) return 'Medium';
+      if (maxJumpMass <=   375_000_000) return 'Large';
+      if (maxJumpMass <= 1_000_000_000) return 'XL';
+      return 'Carrier+';
+    }
+
+    // whTypeData: array of {name, typeId, destClass, maxJumpMass, maxStableMass}
+    // Cache structure in localStorage: { data: [...], fetchedAt: timestamp }
+    const whTypeData      = ref([]);
     const whTypesFetching = ref(false); // true while fetching the type list on load
 
     async function _fetchWhTypeList() {
@@ -384,7 +412,7 @@ createApp({
         const groupResp = await fetch('https://esi.evetech.net/latest/universe/groups/988/?datasource=tranquility');
         if (!groupResp.ok) return;
         const group = await groupResp.json();
-        const typeIds = group.types || [];
+        const typeIds = (group.types || []);
 
         // Step 2: resolve names in a single POST to /universe/names/
         const namesResp = await fetch('https://esi.evetech.net/latest/universe/names/?datasource=tranquility', {
@@ -393,14 +421,39 @@ createApp({
           body: JSON.stringify(typeIds),
         });
         if (!namesResp.ok) return;
-        const names = await namesResp.json();
+        const namesData = await namesResp.json();
+        const idToName = Object.fromEntries(
+          namesData.map(n => [n.id, n.name.replace(/^Wormhole\s+/, '').trim()])
+        );
 
-        // Strip "Wormhole " prefix to get the short in-game designation (e.g. "Z971")
-        const types = names
-          .map(n => ({ name: n.name.replace(/^Wormhole\s+/, '').trim(), typeId: n.id }))
-          .filter(t => t.name)
-          .sort((a, b) => a.name.localeCompare(b.name));
+        // Step 3: fetch type details in parallel batches to get destClass and mass attributes
+        const BATCH = 30;
+        const types = [];
+        for (let i = 0; i < typeIds.length; i += BATCH) {
+          const batch = typeIds.slice(i, i + BATCH);
+          const results = await Promise.all(batch.map(id =>
+            fetch(`https://esi.evetech.net/latest/universe/types/${id}/?datasource=tranquility`)
+              .then(r => r.ok ? r.json() : null)
+              .catch(() => null)
+          ));
+          for (const data of results) {
+            if (!data) continue;
+            const name = idToName[data.type_id];
+            if (!name) continue;
+            const attrMap = Object.fromEntries(
+              (data.dogma_attributes || []).map(a => [a.attribute_id, a.value])
+            );
+            types.push({
+              name,
+              typeId: data.type_id,
+              destClass:    attrMap[ESI_ATTR_WH_DEST_CLASS]      || 0,
+              maxJumpMass:  attrMap[ESI_ATTR_WH_MAX_JUMP_MASS]   || 0,
+              maxStableMass: attrMap[ESI_ATTR_WH_MAX_STABLE_MASS] || 0,
+            });
+          }
+        }
 
+        types.sort((a, b) => a.name.localeCompare(b.name));
         whTypeData.value = types;
         localStorage.setItem(STORAGE_WH_TYPES, JSON.stringify({ data: types, fetchedAt: Date.now() }));
       } catch (_) {
@@ -415,12 +468,43 @@ createApp({
       try {
         const cached = JSON.parse(localStorage.getItem(STORAGE_WH_TYPES) || 'null');
         if (cached?.data?.length && (Date.now() - cached.fetchedAt) < WH_TYPES_CACHE_TTL_MS) {
-          whTypeData.value = cached.data;
-          return;
+          // Cache may be old format (no destClass) — re-fetch if so
+          if (cached.data[0]?.destClass !== undefined) {
+            whTypeData.value = cached.data;
+            return;
+          }
         }
       } catch (_) { /* corrupt cache — fall through to fetch */ }
       _fetchWhTypeList();
     })();
+
+    // ── Custom combobox state ─────────────────────────────────────────────────
+    const whTypeSearch    = ref(wormhole.typeName); // what's currently typed in the input
+    const whDropdownOpen  = ref(false);
+    const whDropdownIdx   = ref(-1); // keyboard-highlighted item index in flat list
+
+    // Sync external changes to typeName back into the search input (e.g. session reset)
+    watch(() => wormhole.typeName, v => { if (v !== whTypeSearch.value) whTypeSearch.value = v; });
+
+    // Grouped and filtered list for the dropdown
+    const whFilteredGroups = computed(() => {
+      const q = whTypeSearch.value.trim().toLowerCase();
+      const filtered = q
+        ? whTypeData.value.filter(t => t.name.toLowerCase().includes(q))
+        : whTypeData.value;
+      const groupMap = new Map();
+      for (const t of filtered) {
+        const cls = WH_DEST_CLASSES[t.destClass] ?? { label: 'Other', short: '?', order: 99 };
+        if (!groupMap.has(t.destClass)) {
+          groupMap.set(t.destClass, { label: cls.label, short: cls.short, order: cls.order, types: [] });
+        }
+        groupMap.get(t.destClass).types.push(t);
+      }
+      return [...groupMap.values()].sort((a, b) => a.order - b.order);
+    });
+
+    // Flat ordered list of all visible options (for keyboard navigation)
+    const whFlatOptions = computed(() => whFilteredGroups.value.flatMap(g => g.types));
 
     // The matched type entry (null if no match or no value)
     const whTypeEntry    = computed(() => whTypeData.value.find(t => t.name === wormhole.typeName) ?? null);
@@ -438,16 +522,64 @@ createApp({
       return type || name || null;
     });
 
-    async function onWhTypeChange() {
-      const typeId = whTypeId.value;
-      if (!typeId) return; // custom or empty — don't fetch
+    function openWhDropdown() {
+      whDropdownOpen.value = true;
+      whDropdownIdx.value = -1;
+    }
+
+    function onWhInputBlur() {
+      // Delay so that @mousedown.prevent on items fires before the dropdown hides
+      setTimeout(() => {
+        wormhole.typeName = whTypeSearch.value.trim();
+        whDropdownOpen.value = false;
+        whDropdownIdx.value = -1;
+      }, 150);
+    }
+
+    function onWhDropdownKey(e) {
+      const flat = whFlatOptions.value;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        whDropdownOpen.value = true;
+        whDropdownIdx.value = Math.min(whDropdownIdx.value + 1, flat.length - 1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        whDropdownIdx.value = Math.max(whDropdownIdx.value - 1, 0);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const idx = whDropdownIdx.value;
+        if (idx >= 0 && idx < flat.length) {
+          selectWhType(flat[idx]);
+        } else if (flat.length === 1) {
+          selectWhType(flat[0]);
+        } else {
+          wormhole.typeName = whTypeSearch.value.trim();
+          whDropdownOpen.value = false;
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        whDropdownOpen.value = false;
+      }
+    }
+
+    function selectWhType(entry) {
+      wormhole.typeName   = entry.name;
+      whTypeSearch.value  = entry.name;
+      whDropdownOpen.value = false;
+      whDropdownIdx.value  = -1;
+      onWhTypeChange(entry.typeId);
+    }
+
+    async function onWhTypeChange(typeId) {
+      const id = typeId ?? whTypeId.value;
+      if (!id) return; // custom or empty — don't fetch
       whTypeFetching.value = true;
       try {
-        const resp = await fetch(`https://esi.evetech.net/latest/universe/types/${typeId}/?datasource=tranquility`);
+        const resp = await fetch(`https://esi.evetech.net/latest/universe/types/${id}/?datasource=tranquility`);
         if (!resp.ok) return;
         const data = await resp.json();
         const attrs = data.dogma_attributes || [];
-        const getAttr = id => attrs.find(a => a.attribute_id === id)?.value ?? null;
+        const getAttr = attrId => attrs.find(a => a.attribute_id === attrId)?.value ?? null;
 
         const totalMass   = getAttr(ESI_ATTR_WH_MAX_STABLE_MASS);
         const maxJumpMass = getAttr(ESI_ATTR_WH_MAX_JUMP_MASS);
@@ -468,11 +600,6 @@ createApp({
         whTypeFetching.value = false;
       }
     }
-
-    // Also trigger ESI fetch when typeName changes to a known type via keyboard (datalist selection)
-    watch(() => wormhole.typeName, () => {
-      if (whTypeEntry.value) onWhTypeChange();
-    });
 
     // ── Mass Computeds ───────────────────────────────────────────────────────
     const usedMass = computed(() => passes.value.reduce((s, p) => s + p.mass, 0));
@@ -841,7 +968,7 @@ createApp({
         passes.value = []; farSideShips.value = [];
         wormhole.name = ''; wormhole.totalMass = 0;
         wormhole.status = 'stable'; wormhole.size = '';
-        wormhole.typeName = '';
+        wormhole.typeName = ''; whTypeSearch.value = '';
       }
     }
 
@@ -1167,6 +1294,8 @@ createApp({
       whTotalMassInput, draftColdInput, draftHotInput, customMassInput,
       whTypeData, whTypeId, whTypeIsCustom, whTypeFetching, whTypesFetching, whDisplayName, onWhTypeChange,
       refreshWhTypes: () => _fetchWhTypeList(),
+      whTypeSearch, whDropdownOpen, whDropdownIdx, whFilteredGroups, whFlatOptions,
+      openWhDropdown, onWhInputBlur, onWhDropdownKey, selectWhType, whSizeLabel,
       applyTheme, fmtMass, massFits,
       addPass, removePass, clearPasses, resetSession, recordPlanPass, advanceWhState, nextWhState,
       addFarSideShip, removeFarSideShip,

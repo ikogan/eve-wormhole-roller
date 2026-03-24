@@ -1059,8 +1059,11 @@ input[type="number"] { -moz-appearance: textfield; }
 }
 
 /* ── Wormhole Type Typeahead ──────────────────────────────── */
-.wh-type-input-wrap {
+.wh-type-combobox {
   position: relative;
+}
+
+.wh-type-input-wrap {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1068,6 +1071,7 @@ input[type="number"] { -moz-appearance: textfield; }
 
 .wh-type-input-wrap .form-input {
   flex: 1;
+  min-width: 0;
 }
 
 .wh-type-custom-badge {
@@ -1094,6 +1098,77 @@ input[type="number"] { -moz-appearance: textfield; }
 @keyframes wh-type-pulse {
   0%, 100% { opacity: 0.4; }
   50%       { opacity: 1; }
+}
+
+.wh-type-dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: var(--color-surface-2, #1a1f2e);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+.wh-type-no-match {
+  max-height: unset;
+}
+
+.wh-type-group-header {
+  padding: 6px 10px 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: var(--color-surface-3, #1e2435);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+}
+
+.wh-type-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 5px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  gap: 8px;
+}
+
+.wh-type-option:hover,
+.wh-type-option.is-active {
+  background: color-mix(in srgb, var(--color-accent, #5599ff) 15%, transparent);
+  color: var(--color-text);
+}
+
+.wh-type-option-name {
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.wh-type-option-size {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.wh-type-loading {
+  padding: 8px 12px;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
 }
 
 /* ── Setup Tab Layout ─────────────────────────────────────── */
