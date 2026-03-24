@@ -778,6 +778,11 @@
                 <span class="calc-spinner-label">Calculating…</span>
               </div>
 
+              <!-- Beta warning -->
+              <div v-if="!calcBusy" class="plan-beta-notice" role="note">
+                ⚠ <strong>Beta feature.</strong> The rolling plan is an estimate — always use your own judgement. Do not follow the plan blindly, especially near the collapse threshold.
+              </div>
+
               <template v-else-if="activePlan">
                 <!-- Already collapsed / impossible alerts -->
                 <div v-if="activePlan.alreadyCollapsed" class="plan-alert is-collapsed">
