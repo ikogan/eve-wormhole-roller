@@ -1828,7 +1828,7 @@ input[type="number"] { -moz-appearance: textfield; }
   border-radius: 6px;
   background: color-mix(in srgb, var(--color-warning, #c8a000) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-warning, #c8a000) 40%, transparent);
-  color: var(--color-text-muted);
+  color: var(--color-text);
   font-size: 0.8rem;
   line-height: 1.4;
 }
@@ -3015,12 +3015,12 @@ body, .card, .app-header, .tab-nav, .modal {
                 <span class="calc-spinner-label">Calculating…</span>
               </div>
 
-              <!-- Beta warning -->
-              <div v-if="!calcBusy" class="plan-beta-notice" role="note">
-                ⚠ <strong>Beta feature.</strong> The rolling plan is an estimate — always use your own judgement. Do not follow the plan blindly, especially near the collapse threshold.
-              </div>
-
               <template v-else-if="activePlan">
+                <!-- Beta warning -->
+                <div class="plan-beta-notice" role="note">
+                  ⚠ <strong>Beta feature.</strong> The rolling plan is an estimate — always use your own judgement. Do not follow the plan blindly, especially near the collapse threshold.
+                </div>
+
                 <!-- Already collapsed / impossible alerts -->
                 <div v-if="activePlan.alreadyCollapsed" class="plan-alert is-collapsed">
                   ✓ Recorded passes{{ farSideShips.length ? ' + far side returns' : '' }} will collapse the wormhole.
