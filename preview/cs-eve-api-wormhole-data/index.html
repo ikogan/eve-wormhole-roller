@@ -1861,6 +1861,11 @@ input[type="number"] { -moz-appearance: textfield; }
   animation: wh-type-pulse 1s infinite;
 }
 
+.wh-type-refresh-btn {
+  flex-shrink: 0;
+  padding: 4px 8px;
+}
+
 @keyframes wh-type-pulse {
   0%, 100% { opacity: 0.4; }
   50%       { opacity: 1; }
@@ -2381,11 +2386,10 @@ body, .card, .app-header, .tab-nav, .modal {
                   v-model="wormhole.typeName"
                   list="wh-types-datalist"
                   class="form-input"
-                  placeholder="e.g. Z971 — type or scroll to select"
-                  autocomplete="off"
-                  spellcheck="false"
                   :placeholder="whTypesFetching ? 'Loading wormhole types…' : 'e.g. Z971 — type or scroll to select'"
                   :disabled="whTypesFetching && whTypeData.length === 0"
+                  autocomplete="off"
+                  spellcheck="false"
                   @change="onWhTypeChange"
                 >
                 <datalist id="wh-types-datalist">
@@ -2393,6 +2397,12 @@ body, .card, .app-header, .tab-nav, .modal {
                 </datalist>
                 <span v-if="whTypeIsCustom && !whTypesFetching" class="wh-type-custom-badge" title="Custom value — mass and size not auto-populated from EVE data">ⓘ</span>
                 <span v-if="whTypeFetching || whTypesFetching" class="wh-type-fetching" :title="whTypesFetching ? 'Loading wormhole type list…' : 'Loading wormhole data…'">⋯</span>
+                <button
+                  class="btn btn-secondary btn-sm wh-type-refresh-btn"
+                  :disabled="whTypesFetching"
+                  title="Refresh wormhole type list from EVE ESI (useful after EVE updates)"
+                  @click.prevent="refreshWhTypes"
+                >↺</button>
               </div>
             </label>
             <label class="form-label">
@@ -3371,8 +3381,8 @@ const ESI_ATTR_WH_MASS_REGEN       = 1382; // Mass regeneration (not used in app
 const ESI_ATTR_WH_MAX_STABLE_MASS  = 1383; // Total mass the wormhole accepts before collapsing (kg) → maps to "Total Mass" field
 const ESI_ATTR_WH_MAX_JUMP_MASS    = 1385; // Max mass of a single ship that can jump through (kg) → maps to "Wormhole Size" field
 
-// How long to keep the ESI wormhole type list in localStorage before re-fetching (7 days)
-const WH_TYPES_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+// How long to keep the ESI wormhole type list in localStorage before re-fetching (1 day)
+const WH_TYPES_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 // Individual ship mass limits per wormhole size (stored internally in kg)
 const WH_SIZES = [
@@ -4513,6 +4523,7 @@ createApp({
       shipModalValid, unitStep,
       whTotalMassInput, draftColdInput, draftHotInput, customMassInput,
       whTypeData, whTypeId, whTypeIsCustom, whTypeFetching, whTypesFetching, whDisplayName, onWhTypeChange,
+      refreshWhTypes: () => _fetchWhTypeList(),
       applyTheme, fmtMass, massFits,
       addPass, removePass, clearPasses, resetSession, recordPlanPass, advanceWhState, nextWhState,
       addFarSideShip, removeFarSideShip,
