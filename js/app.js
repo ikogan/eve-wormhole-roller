@@ -373,22 +373,29 @@ createApp({
     function massFits(kg) { return !whSizeLimit.value || kg <= whSizeLimit.value; }
 
     // ── Wormhole Type (ESI typeahead combobox) ───────────────────────────────
-    // Destination class mapping: dogma attribute 1457 → display label + sort order.
-    // These values come from the EVE SDE wormholeClassID field, confirmed via ESI.
-    const WH_DEST_CLASSES = {
-      296: { label: 'C1 — Class 1',           short: 'C1', order: 1 },
-      297: { label: 'C2 — Class 2',           short: 'C2', order: 2 },
-      298: { label: 'C3 — Class 3',           short: 'C3', order: 3 },
-      299: { label: 'C4 — Class 4',           short: 'C4', order: 4 },
-      300: { label: 'C5 — Class 5',           short: 'C5', order: 5 },
-      301: { label: 'C6 — Class 6',           short: 'C6', order: 6 },
-      302: { label: 'HS — High Security',     short: 'HS', order: 7 },
-      303: { label: 'LS — Low Security',      short: 'LS', order: 8 },
-      304: { label: 'NS — Null Security',     short: 'NS', order: 9 },
-      305: { label: 'Thera',                  short: 'Thera', order: 10 },
-      306: { label: 'Drifter',                short: 'Drifter', order: 11 },
-      309: { label: 'Pochven',                short: 'Pochven', order: 12 },
-    };
+    // Resolves dogma attribute 1457 (wormholeClassID) to a display group.
+    // Simple values map 1:1; Pochven uses a numeric range since each Pochven
+    // system gets its own unique typeId (all named C729) with a distinct classID.
+    // Confirmed via ESI attribute queries — see ESI_ATTR_WH_DEST_CLASS constant.
+    function _whDestGroup(cls) {
+      switch (cls) {
+        case 296: return { label: 'C1 — Class 1',       order: 1 };
+        case 297: return { label: 'C2 — Class 2',       order: 2 };
+        case 298: return { label: 'C3 — Class 3',       order: 3 };
+        case 299: return { label: 'C4 — Class 4',       order: 4 };
+        case 300: return { label: 'C5 — Class 5',       order: 5 };
+        case 301: return { label: 'C6 — Class 6',       order: 6 };
+        case 302: return { label: 'HS — High Security', order: 7 };
+        case 303: return { label: 'LS — Low Security',  order: 8 };
+        case 304: return { label: 'NS — Null Security', order: 9 };
+        case 709: return { label: 'Thera',              order: 10 };
+        case 731: return { label: 'Drifter Hive',       order: 11 };
+        default:
+          if (cls >= 2925 && cls <= 3000) return { label: 'Pochven',  order: 12 };
+          if (cls >= 3000)               return { label: 'Other',     order: 99 };
+          return null; // filtered out (K162, QA holes, etc.)
+      }
+    }
 
     // Size label derived from ESI_ATTR_WH_MAX_JUMP_MASS value
     function whSizeLabel(maxJumpMass) {
@@ -443,19 +450,30 @@ createApp({
             const attrMap = Object.fromEntries(
               (data.dogma_attributes || []).map(a => [a.attribute_id, a.value])
             );
+            const destClass = attrMap[ESI_ATTR_WH_DEST_CLASS] || 0;
+            // Filter out: K162 (cls=0, no mass data), QA test holes (cls 628/629)
+            if (destClass === 0 || destClass === 628 || destClass === 629) continue;
+            // Filter out types with no destination group mapping
+            if (!_whDestGroup(destClass)) continue;
             types.push({
               name,
               typeId: data.type_id,
-              destClass:    attrMap[ESI_ATTR_WH_DEST_CLASS]      || 0,
-              maxJumpMass:  attrMap[ESI_ATTR_WH_MAX_JUMP_MASS]   || 0,
+              destClass,
+              maxJumpMass:   attrMap[ESI_ATTR_WH_MAX_JUMP_MASS]   || 0,
               maxStableMass: attrMap[ESI_ATTR_WH_MAX_STABLE_MASS] || 0,
             });
           }
         }
 
-        types.sort((a, b) => a.name.localeCompare(b.name));
-        whTypeData.value = types;
-        localStorage.setItem(STORAGE_WH_TYPES, JSON.stringify({ data: types, fetchedAt: Date.now() }));
+        // Deduplicate by name: many Pochven system typeIds share the name "C729"
+        // (one per Pochven system). Keep only the first encountered for each name.
+        const seenNames = new Set();
+        const deduped = [];
+        for (const t of types.sort((a, b) => a.name.localeCompare(b.name))) {
+          if (!seenNames.has(t.name)) { seenNames.add(t.name); deduped.push(t); }
+        }
+        whTypeData.value = deduped;
+        localStorage.setItem(STORAGE_WH_TYPES, JSON.stringify({ data: deduped, fetchedAt: Date.now() }));
       } catch (_) {
         // Network error — app still works without the type list
       } finally {
@@ -494,11 +512,11 @@ createApp({
         : whTypeData.value;
       const groupMap = new Map();
       for (const t of filtered) {
-        const cls = WH_DEST_CLASSES[t.destClass] ?? { label: 'Other', short: '?', order: 99 };
-        if (!groupMap.has(t.destClass)) {
-          groupMap.set(t.destClass, { label: cls.label, short: cls.short, order: cls.order, types: [] });
+        const grp = _whDestGroup(t.destClass) ?? { label: 'Other', order: 99 };
+        if (!groupMap.has(grp.label)) {
+          groupMap.set(grp.label, { label: grp.label, order: grp.order, types: [] });
         }
-        groupMap.get(t.destClass).types.push(t);
+        groupMap.get(grp.label).types.push(t);
       }
       return [...groupMap.values()].sort((a, b) => a.order - b.order);
     });
