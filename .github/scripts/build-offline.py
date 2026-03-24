@@ -5,6 +5,9 @@ Local <link rel="stylesheet" href="..."> → <style>...</style>
 Local <script src="...">                 → <script>...</script>
 CDN  <script src="https://...">         → <script>...</script>  (fetched over HTTP)
 
+Wormhole type data is fetched from the EVE ESI API at runtime and cached in localStorage.
+No static data files need to be committed or embedded.
+
 Usage: python3 build-offline.py [output-filename]
 Default output: eve-wormhole-roller.html
 """
