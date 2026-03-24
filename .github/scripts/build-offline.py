@@ -4,12 +4,14 @@
 Local <link rel="stylesheet" href="..."> → <style>...</style>
 Local <script src="...">                 → <script>...</script>
 CDN  <script src="https://...">         → <script>...</script>  (fetched over HTTP)
-data/wormhole-types.json                → window.WH_TYPE_DATA = [...] inline script
+
+Wormhole type data is fetched from the EVE ESI API at runtime and cached in localStorage.
+No static data files need to be committed or embedded.
 
 Usage: python3 build-offline.py [output-filename]
 Default output: eve-wormhole-roller.html
 """
-import re, sys, json, urllib.request
+import re, sys, urllib.request
 from pathlib import Path
 
 output = sys.argv[1] if len(sys.argv) > 1 else 'eve-wormhole-roller.html'
@@ -56,18 +58,6 @@ result = re.sub(
     inline_cdn_script,
     result,
 )
-
-# Embed wormhole type data as a global variable (replaces fetch from data/wormhole-types.json)
-wh_types_path = Path('data/wormhole-types.json')
-if wh_types_path.exists():
-    print(f'  Embedding {wh_types_path}', flush=True)
-    wh_types = json.loads(wh_types_path.read_text(encoding='utf-8'))
-    wh_json = json.dumps(wh_types, separators=(',', ':'))
-    wh_script = f'<script>window.WH_TYPE_DATA={wh_json};</script>'
-    # Insert before </head>
-    result = result.replace('</head>', f'{wh_script}\n</head>', 1)
-else:
-    print(f'  WARNING: {wh_types_path} not found — wormhole type data will not be embedded', flush=True)
 
 with open(output, 'w', encoding='utf-8') as f:
     f.write(result)

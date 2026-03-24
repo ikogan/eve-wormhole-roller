@@ -7,15 +7,6 @@
   <title>Wormhole Roller — EVE Online</title>
   <link rel="stylesheet" href="css/themes.css">
   <link rel="stylesheet" href="css/main.css">
-  <!-- Wormhole type data: embedded by build-offline.py for desktop; loaded from data/ for GitHub Pages -->
-  <script>
-    if (typeof window.WH_TYPE_DATA === 'undefined') {
-      fetch('./data/wormhole-types.json')
-        .then(r => r.ok ? r.json() : [])
-        .then(d => { window.WH_TYPE_DATA = d; })
-        .catch(() => { window.WH_TYPE_DATA = []; });
-    }
-  </script>
 </head>
 <body>
 <div id="app">
@@ -123,13 +114,15 @@
                   placeholder="e.g. Z971 — type or scroll to select"
                   autocomplete="off"
                   spellcheck="false"
+                  :placeholder="whTypesFetching ? 'Loading wormhole types…' : 'e.g. Z971 — type or scroll to select'"
+                  :disabled="whTypesFetching && whTypeData.length === 0"
                   @change="onWhTypeChange"
                 >
                 <datalist id="wh-types-datalist">
                   <option v-for="t in whTypeData" :value="t.name" :key="t.typeId"></option>
                 </datalist>
-                <span v-if="whTypeIsCustom" class="wh-type-custom-badge" title="Custom value — mass and size not auto-populated from EVE data">ⓘ</span>
-                <span v-if="whTypeFetching" class="wh-type-fetching" title="Loading wormhole data…">⋯</span>
+                <span v-if="whTypeIsCustom && !whTypesFetching" class="wh-type-custom-badge" title="Custom value — mass and size not auto-populated from EVE data">ⓘ</span>
+                <span v-if="whTypeFetching || whTypesFetching" class="wh-type-fetching" :title="whTypesFetching ? 'Loading wormhole type list…' : 'Loading wormhole data…'">⋯</span>
               </div>
             </label>
             <label class="form-label">

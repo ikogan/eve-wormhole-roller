@@ -14,6 +14,18 @@ const STORAGE_PILOTS         = 'eve-whr-pilots-v1';
 const STORAGE_SHOW_PLAN      = 'eve-whr-show-plan-v1';
 const STORAGE_ACTIVE_TAB     = 'eve-whr-active-tab-v1';
 const STORAGE_PLAN_VIEW      = 'eve-whr-plan-view-v1';
+const STORAGE_WH_TYPES       = 'eve-whr-wh-types-v1'; // cached wormhole type list from ESI
+
+// ── EVE ESI wormhole dogma attribute IDs ─────────────────────────────────────
+// These are the numeric attribute IDs returned in dogma_attributes[] when
+// calling /universe/types/{typeId}/ for a wormhole type.
+const ESI_ATTR_WH_MAX_STABLE_TIME  = 1381; // Max wormhole lifetime (hours)
+const ESI_ATTR_WH_MASS_REGEN       = 1382; // Mass regeneration (not used in app)
+const ESI_ATTR_WH_MAX_STABLE_MASS  = 1383; // Total mass the wormhole accepts before collapsing (kg) → maps to "Total Mass" field
+const ESI_ATTR_WH_MAX_JUMP_MASS    = 1385; // Max mass of a single ship that can jump through (kg) → maps to "Wormhole Size" field
+
+// How long to keep the ESI wormhole type list in localStorage before re-fetching (7 days)
+const WH_TYPES_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 // Individual ship mass limits per wormhole size (stored internally in kg)
 const WH_SIZES = [
@@ -360,38 +372,71 @@ createApp({
     function massFits(kg) { return !whSizeLimit.value || kg <= whSizeLimit.value; }
 
     // ── Wormhole Type (ESI typeahead) ─────────────────────────────────────────
-    // whTypeData: array of {name, typeId} loaded from window.WH_TYPE_DATA or data/wormhole-types.json
-    const whTypeData = ref(Array.isArray(window.WH_TYPE_DATA) ? window.WH_TYPE_DATA : []);
+    // whTypeData: array of {name, typeId} — loaded from localStorage cache or fetched from ESI.
+    // Cache structure: { data: [{name, typeId}], fetchedAt: timestamp }
+    const whTypeData     = ref([]);
+    const whTypesFetching = ref(false); // true while fetching the type list on load
 
-    // If the data wasn't embedded (GitHub Pages), wait for the fetch to complete
-    if (!Array.isArray(window.WH_TYPE_DATA) || whTypeData.value.length === 0) {
-      const poll = setInterval(() => {
-        if (Array.isArray(window.WH_TYPE_DATA) && window.WH_TYPE_DATA.length > 0) {
-          whTypeData.value = window.WH_TYPE_DATA;
-          clearInterval(poll);
-        }
-      }, 200);
+    async function _fetchWhTypeList() {
+      whTypesFetching.value = true;
+      try {
+        // Step 1: get all type IDs in the wormhole group (988)
+        const groupResp = await fetch('https://esi.evetech.net/latest/universe/groups/988/?datasource=tranquility');
+        if (!groupResp.ok) return;
+        const group = await groupResp.json();
+        const typeIds = group.types || [];
+
+        // Step 2: resolve names in a single POST to /universe/names/
+        const namesResp = await fetch('https://esi.evetech.net/latest/universe/names/?datasource=tranquility', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(typeIds),
+        });
+        if (!namesResp.ok) return;
+        const names = await namesResp.json();
+
+        // Strip "Wormhole " prefix to get the short in-game designation (e.g. "Z971")
+        const types = names
+          .map(n => ({ name: n.name.replace(/^Wormhole\s+/, '').trim(), typeId: n.id }))
+          .filter(t => t.name)
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        whTypeData.value = types;
+        localStorage.setItem(STORAGE_WH_TYPES, JSON.stringify({ data: types, fetchedAt: Date.now() }));
+      } catch (_) {
+        // Network error — app still works without the type list
+      } finally {
+        whTypesFetching.value = false;
+      }
     }
+
+    // Load from cache on startup; re-fetch if absent or stale
+    (function initWhTypeData() {
+      try {
+        const cached = JSON.parse(localStorage.getItem(STORAGE_WH_TYPES) || 'null');
+        if (cached?.data?.length && (Date.now() - cached.fetchedAt) < WH_TYPES_CACHE_TTL_MS) {
+          whTypeData.value = cached.data;
+          return;
+        }
+      } catch (_) { /* corrupt cache — fall through to fetch */ }
+      _fetchWhTypeList();
+    })();
 
     // The matched type entry (null if no match or no value)
     const whTypeEntry    = computed(() => whTypeData.value.find(t => t.name === wormhole.typeName) ?? null);
     const whTypeId       = computed(() => whTypeEntry.value?.typeId ?? null);
-    // True if user has typed something that doesn't match any known type
+    // True if user has typed a non-empty value that doesn't match any known type
     const whTypeIsCustom = computed(() => !!wormhole.typeName && !whTypeEntry.value);
 
-    const whTypeFetching = ref(false);
+    const whTypeFetching = ref(false); // true while fetching dogma attrs for a selected type
 
-    // Combined display name shown in header and plan: "{typeName} — {name}" or just one of them
+    // Combined display name shown in header: "{typeName} — {name}" or just one if only one is set
     const whDisplayName = computed(() => {
       const type = wormhole.typeName.trim();
       const name = wormhole.name.trim();
       if (type && name) return `${type} — ${name}`;
       return type || name || null;
     });
-
-    // ESI dogma attribute IDs for wormhole types
-    const ESI_ATTR_MAX_STABLE_MASS = 1383; // total mass limit in kg
-    const ESI_ATTR_MAX_JUMP_MASS   = 1385; // max single-jump mass in kg
 
     async function onWhTypeChange() {
       const typeId = whTypeId.value;
@@ -404,10 +449,10 @@ createApp({
         const attrs = data.dogma_attributes || [];
         const getAttr = id => attrs.find(a => a.attribute_id === id)?.value ?? null;
 
-        const totalMass  = getAttr(ESI_ATTR_MAX_STABLE_MASS);
-        const maxJumpMass = getAttr(ESI_ATTR_MAX_JUMP_MASS);
+        const totalMass   = getAttr(ESI_ATTR_WH_MAX_STABLE_MASS);
+        const maxJumpMass = getAttr(ESI_ATTR_WH_MAX_JUMP_MASS);
 
-        if (totalMass  != null) wormhole.totalMass = totalMass;
+        if (totalMass != null)   wormhole.totalMass = totalMass;
         if (maxJumpMass != null) {
           // Map maxJumpMass to the closest WH_SIZES entry
           const matched = WH_SIZES.reduce((best, sz) =>
@@ -425,7 +470,7 @@ createApp({
     }
 
     // Also trigger ESI fetch when typeName changes to a known type via keyboard (datalist selection)
-    watch(() => wormhole.typeName, (newVal) => {
+    watch(() => wormhole.typeName, () => {
       if (whTypeEntry.value) onWhTypeChange();
     });
 
@@ -1120,7 +1165,7 @@ createApp({
       passesReversed, passesWithRunning, passOptions, worstCasePlan, bestCasePlan, calcBusy,
       shipModalValid, unitStep,
       whTotalMassInput, draftColdInput, draftHotInput, customMassInput,
-      whTypeData, whTypeId, whTypeIsCustom, whTypeFetching, whDisplayName, onWhTypeChange,
+      whTypeData, whTypeId, whTypeIsCustom, whTypeFetching, whTypesFetching, whDisplayName, onWhTypeChange,
       applyTheme, fmtMass, massFits,
       addPass, removePass, clearPasses, resetSession, recordPlanPass, advanceWhState, nextWhState,
       addFarSideShip, removeFarSideShip,
