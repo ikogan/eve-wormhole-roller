@@ -2277,16 +2277,6 @@ body, .card, .app-header, .tab-nav, .modal {
 }
 
 </style>
-  <!-- Wormhole type data: embedded by build-offline.py for desktop; loaded from data/ for GitHub Pages -->
-  <script>
-    if (typeof window.WH_TYPE_DATA === 'undefined') {
-      fetch('./data/wormhole-types.json')
-        .then(r => r.ok ? r.json() : [])
-        .then(d => { window.WH_TYPE_DATA = d; })
-        .catch(() => { window.WH_TYPE_DATA = []; });
-    }
-  </script>
-<script>window.WH_TYPE_DATA=[{"name":"A009","typeId":34439},{"name":"A239","typeId":30678},{"name":"A641","typeId":30657},{"name":"A982","typeId":30685},{"name":"B041","typeId":30645},{"name":"B274","typeId":30677},{"name":"B449","typeId":30647},{"name":"B520","typeId":30713},{"name":"B735","typeId":35651},{"name":"C008","typeId":34138},{"name":"C125","typeId":30661},{"name":"C140","typeId":30705},{"name":"C247","typeId":30691},{"name":"C248","typeId":30715},{"name":"C391","typeId":30714},{"name":"C414","typeId":35653},{"name":"C729","typeId":56026},{"name":"C729","typeId":56535},{"name":"C729","typeId":56536},{"name":"C729","typeId":56537},{"name":"C729","typeId":56538},{"name":"C729","typeId":56539},{"name":"C729","typeId":56545},{"name":"C729","typeId":56546},{"name":"C729","typeId":56547},{"name":"C729","typeId":56548},{"name":"C729","typeId":56549},{"name":"C729","typeId":56550},{"name":"C729","typeId":56551},{"name":"C729","typeId":56552},{"name":"C729","typeId":56553},{"name":"C729","typeId":56554},{"name":"C729","typeId":56555},{"name":"C729","typeId":56556},{"name":"C729","typeId":56557},{"name":"C729","typeId":56558},{"name":"C729","typeId":56559},{"name":"C729","typeId":56560},{"name":"C729","typeId":56561},{"name":"C729","typeId":56562},{"name":"C729","typeId":56563},{"name":"C729","typeId":56564},{"name":"C729","typeId":56565},{"name":"D364","typeId":30699},{"name":"D382","typeId":30672},{"name":"D792","typeId":30704},{"name":"D845","typeId":30695},{"name":"E004","typeId":34134},{"name":"E175","typeId":30701},{"name":"E545","typeId":30679},{"name":"E587","typeId":34370},{"name":"F135","typeId":34372},{"name":"F216","typeId":56542},{"name":"F216","typeId":56543},{"name":"F353","typeId":34371},{"name":"G008","typeId":34139},{"name":"G024","typeId":30708},{"name":"H121","typeId":30660},{"name":"H296","typeId":30702},{"name":"H900","typeId":30693},{"name":"I078","typeId":92287},{"name":"I182","typeId":30681},{"name":"J244","typeId":30667},{"name":"J244","typeId":73748},{"name":"J377","typeId":73749},{"name":"J492","typeId":87827},{"name":"K162","typeId":30831},{"name":"K329","typeId":30697},{"name":"K346","typeId":30688},{"name":"L005","typeId":34135},{"name":"L031","typeId":34367},{"name":"L477","typeId":30709},{"name":"L614","typeId":30664},{"name":"L687","typeId":92288},{"name":"M001","typeId":34137},{"name":"M164","typeId":34366},{"name":"M267","typeId":30700},{"name":"M555","typeId":30644},{"name":"M609","typeId":30663},{"name":"N062","typeId":30675},{"name":"N110","typeId":30666},{"name":"N290","typeId":30696},{"name":"N432","typeId":30643},{"name":"N766","typeId":30690},{"name":"N770","typeId":30684},{"name":"N944","typeId":30648},{"name":"N968","typeId":30682},{"name":"O128","typeId":30642},{"name":"O477","typeId":30673},{"name":"O546","typeId":92289},{"name":"O883","typeId":30662},{"name":"P060","typeId":30689},{"name":"Q003","typeId":34140},{"name":"Q063","typeId":34368},{"name":"Q317","typeId":30707},{"name":"QA A","typeId":32894},{"name":"QA B","typeId":32895},{"name":"R051","typeId":30658},{"name":"R081","typeId":56541},{"name":"R259","typeId":35654},{"name":"R474","typeId":30676},{"name":"R943","typeId":30583},{"name":"S047","typeId":30686},{"name":"S199","typeId":30649},{"name":"S804","typeId":30665},{"name":"S877","typeId":35650},{"name":"T405","typeId":30683},{"name":"T458","typeId":34338},{"name":"U210","typeId":30687},{"name":"U319","typeId":30646},{"name":"U372","typeId":56544},{"name":"U574","typeId":30694},{"name":"V283","typeId":30659},{"name":"V301","typeId":30680},{"name":"V753","typeId":30703},{"name":"V898","typeId":34369},{"name":"V911","typeId":30711},{"name":"V928","typeId":35652},{"name":"W237","typeId":30712},{"name":"X450","typeId":56540},{"name":"X702","typeId":30584},{"name":"X877","typeId":30692},{"name":"Y683","typeId":30674},{"name":"Y790","typeId":30698},{"name":"Z006","typeId":34136},{"name":"Z060","typeId":30668},{"name":"Z142","typeId":30706},{"name":"Z457","typeId":30710},{"name":"Z647","typeId":30671},{"name":"Z971","typeId":30579}];</script>
 </head>
 <body>
 <div id="app">
@@ -2394,13 +2384,15 @@ body, .card, .app-header, .tab-nav, .modal {
                   placeholder="e.g. Z971 — type or scroll to select"
                   autocomplete="off"
                   spellcheck="false"
+                  :placeholder="whTypesFetching ? 'Loading wormhole types…' : 'e.g. Z971 — type or scroll to select'"
+                  :disabled="whTypesFetching && whTypeData.length === 0"
                   @change="onWhTypeChange"
                 >
                 <datalist id="wh-types-datalist">
                   <option v-for="t in whTypeData" :value="t.name" :key="t.typeId"></option>
                 </datalist>
-                <span v-if="whTypeIsCustom" class="wh-type-custom-badge" title="Custom value — mass and size not auto-populated from EVE data">ⓘ</span>
-                <span v-if="whTypeFetching" class="wh-type-fetching" title="Loading wormhole data…">⋯</span>
+                <span v-if="whTypeIsCustom && !whTypesFetching" class="wh-type-custom-badge" title="Custom value — mass and size not auto-populated from EVE data">ⓘ</span>
+                <span v-if="whTypeFetching || whTypesFetching" class="wh-type-fetching" :title="whTypesFetching ? 'Loading wormhole type list…' : 'Loading wormhole data…'">⋯</span>
               </div>
             </label>
             <label class="form-label">
@@ -3369,6 +3361,18 @@ const STORAGE_PILOTS         = 'eve-whr-pilots-v1';
 const STORAGE_SHOW_PLAN      = 'eve-whr-show-plan-v1';
 const STORAGE_ACTIVE_TAB     = 'eve-whr-active-tab-v1';
 const STORAGE_PLAN_VIEW      = 'eve-whr-plan-view-v1';
+const STORAGE_WH_TYPES       = 'eve-whr-wh-types-v1'; // cached wormhole type list from ESI
+
+// ── EVE ESI wormhole dogma attribute IDs ─────────────────────────────────────
+// These are the numeric attribute IDs returned in dogma_attributes[] when
+// calling /universe/types/{typeId}/ for a wormhole type.
+const ESI_ATTR_WH_MAX_STABLE_TIME  = 1381; // Max wormhole lifetime (hours)
+const ESI_ATTR_WH_MASS_REGEN       = 1382; // Mass regeneration (not used in app)
+const ESI_ATTR_WH_MAX_STABLE_MASS  = 1383; // Total mass the wormhole accepts before collapsing (kg) → maps to "Total Mass" field
+const ESI_ATTR_WH_MAX_JUMP_MASS    = 1385; // Max mass of a single ship that can jump through (kg) → maps to "Wormhole Size" field
+
+// How long to keep the ESI wormhole type list in localStorage before re-fetching (7 days)
+const WH_TYPES_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 // Individual ship mass limits per wormhole size (stored internally in kg)
 const WH_SIZES = [
@@ -3715,38 +3719,71 @@ createApp({
     function massFits(kg) { return !whSizeLimit.value || kg <= whSizeLimit.value; }
 
     // ── Wormhole Type (ESI typeahead) ─────────────────────────────────────────
-    // whTypeData: array of {name, typeId} loaded from window.WH_TYPE_DATA or data/wormhole-types.json
-    const whTypeData = ref(Array.isArray(window.WH_TYPE_DATA) ? window.WH_TYPE_DATA : []);
+    // whTypeData: array of {name, typeId} — loaded from localStorage cache or fetched from ESI.
+    // Cache structure: { data: [{name, typeId}], fetchedAt: timestamp }
+    const whTypeData     = ref([]);
+    const whTypesFetching = ref(false); // true while fetching the type list on load
 
-    // If the data wasn't embedded (GitHub Pages), wait for the fetch to complete
-    if (!Array.isArray(window.WH_TYPE_DATA) || whTypeData.value.length === 0) {
-      const poll = setInterval(() => {
-        if (Array.isArray(window.WH_TYPE_DATA) && window.WH_TYPE_DATA.length > 0) {
-          whTypeData.value = window.WH_TYPE_DATA;
-          clearInterval(poll);
-        }
-      }, 200);
+    async function _fetchWhTypeList() {
+      whTypesFetching.value = true;
+      try {
+        // Step 1: get all type IDs in the wormhole group (988)
+        const groupResp = await fetch('https://esi.evetech.net/latest/universe/groups/988/?datasource=tranquility');
+        if (!groupResp.ok) return;
+        const group = await groupResp.json();
+        const typeIds = group.types || [];
+
+        // Step 2: resolve names in a single POST to /universe/names/
+        const namesResp = await fetch('https://esi.evetech.net/latest/universe/names/?datasource=tranquility', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(typeIds),
+        });
+        if (!namesResp.ok) return;
+        const names = await namesResp.json();
+
+        // Strip "Wormhole " prefix to get the short in-game designation (e.g. "Z971")
+        const types = names
+          .map(n => ({ name: n.name.replace(/^Wormhole\s+/, '').trim(), typeId: n.id }))
+          .filter(t => t.name)
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        whTypeData.value = types;
+        localStorage.setItem(STORAGE_WH_TYPES, JSON.stringify({ data: types, fetchedAt: Date.now() }));
+      } catch (_) {
+        // Network error — app still works without the type list
+      } finally {
+        whTypesFetching.value = false;
+      }
     }
+
+    // Load from cache on startup; re-fetch if absent or stale
+    (function initWhTypeData() {
+      try {
+        const cached = JSON.parse(localStorage.getItem(STORAGE_WH_TYPES) || 'null');
+        if (cached?.data?.length && (Date.now() - cached.fetchedAt) < WH_TYPES_CACHE_TTL_MS) {
+          whTypeData.value = cached.data;
+          return;
+        }
+      } catch (_) { /* corrupt cache — fall through to fetch */ }
+      _fetchWhTypeList();
+    })();
 
     // The matched type entry (null if no match or no value)
     const whTypeEntry    = computed(() => whTypeData.value.find(t => t.name === wormhole.typeName) ?? null);
     const whTypeId       = computed(() => whTypeEntry.value?.typeId ?? null);
-    // True if user has typed something that doesn't match any known type
+    // True if user has typed a non-empty value that doesn't match any known type
     const whTypeIsCustom = computed(() => !!wormhole.typeName && !whTypeEntry.value);
 
-    const whTypeFetching = ref(false);
+    const whTypeFetching = ref(false); // true while fetching dogma attrs for a selected type
 
-    // Combined display name shown in header and plan: "{typeName} — {name}" or just one of them
+    // Combined display name shown in header: "{typeName} — {name}" or just one if only one is set
     const whDisplayName = computed(() => {
       const type = wormhole.typeName.trim();
       const name = wormhole.name.trim();
       if (type && name) return `${type} — ${name}`;
       return type || name || null;
     });
-
-    // ESI dogma attribute IDs for wormhole types
-    const ESI_ATTR_MAX_STABLE_MASS = 1383; // total mass limit in kg
-    const ESI_ATTR_MAX_JUMP_MASS   = 1385; // max single-jump mass in kg
 
     async function onWhTypeChange() {
       const typeId = whTypeId.value;
@@ -3759,10 +3796,10 @@ createApp({
         const attrs = data.dogma_attributes || [];
         const getAttr = id => attrs.find(a => a.attribute_id === id)?.value ?? null;
 
-        const totalMass  = getAttr(ESI_ATTR_MAX_STABLE_MASS);
-        const maxJumpMass = getAttr(ESI_ATTR_MAX_JUMP_MASS);
+        const totalMass   = getAttr(ESI_ATTR_WH_MAX_STABLE_MASS);
+        const maxJumpMass = getAttr(ESI_ATTR_WH_MAX_JUMP_MASS);
 
-        if (totalMass  != null) wormhole.totalMass = totalMass;
+        if (totalMass != null)   wormhole.totalMass = totalMass;
         if (maxJumpMass != null) {
           // Map maxJumpMass to the closest WH_SIZES entry
           const matched = WH_SIZES.reduce((best, sz) =>
@@ -3780,7 +3817,7 @@ createApp({
     }
 
     // Also trigger ESI fetch when typeName changes to a known type via keyboard (datalist selection)
-    watch(() => wormhole.typeName, (newVal) => {
+    watch(() => wormhole.typeName, () => {
       if (whTypeEntry.value) onWhTypeChange();
     });
 
@@ -4475,7 +4512,7 @@ createApp({
       passesReversed, passesWithRunning, passOptions, worstCasePlan, bestCasePlan, calcBusy,
       shipModalValid, unitStep,
       whTotalMassInput, draftColdInput, draftHotInput, customMassInput,
-      whTypeData, whTypeId, whTypeIsCustom, whTypeFetching, whDisplayName, onWhTypeChange,
+      whTypeData, whTypeId, whTypeIsCustom, whTypeFetching, whTypesFetching, whDisplayName, onWhTypeChange,
       applyTheme, fmtMass, massFits,
       addPass, removePass, clearPasses, resetSession, recordPlanPass, advanceWhState, nextWhState,
       addFarSideShip, removeFarSideShip,
