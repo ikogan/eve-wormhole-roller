@@ -1086,6 +1086,11 @@ input[type="number"] { -moz-appearance: textfield; }
   animation: wh-type-pulse 1s infinite;
 }
 
+.wh-type-refresh-btn {
+  flex-shrink: 0;
+  padding: 4px 8px;
+}
+
 @keyframes wh-type-pulse {
   0%, 100% { opacity: 0.4; }
   50%       { opacity: 1; }

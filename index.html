@@ -111,11 +111,10 @@
                   v-model="wormhole.typeName"
                   list="wh-types-datalist"
                   class="form-input"
-                  placeholder="e.g. Z971 — type or scroll to select"
-                  autocomplete="off"
-                  spellcheck="false"
                   :placeholder="whTypesFetching ? 'Loading wormhole types…' : 'e.g. Z971 — type or scroll to select'"
                   :disabled="whTypesFetching && whTypeData.length === 0"
+                  autocomplete="off"
+                  spellcheck="false"
                   @change="onWhTypeChange"
                 >
                 <datalist id="wh-types-datalist">
@@ -123,6 +122,12 @@
                 </datalist>
                 <span v-if="whTypeIsCustom && !whTypesFetching" class="wh-type-custom-badge" title="Custom value — mass and size not auto-populated from EVE data">ⓘ</span>
                 <span v-if="whTypeFetching || whTypesFetching" class="wh-type-fetching" :title="whTypesFetching ? 'Loading wormhole type list…' : 'Loading wormhole data…'">⋯</span>
+                <button
+                  class="btn btn-secondary btn-sm wh-type-refresh-btn"
+                  :disabled="whTypesFetching"
+                  title="Refresh wormhole type list from EVE ESI (useful after EVE updates)"
+                  @click.prevent="refreshWhTypes"
+                >↺</button>
               </div>
             </label>
             <label class="form-label">

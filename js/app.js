@@ -24,8 +24,8 @@ const ESI_ATTR_WH_MASS_REGEN       = 1382; // Mass regeneration (not used in app
 const ESI_ATTR_WH_MAX_STABLE_MASS  = 1383; // Total mass the wormhole accepts before collapsing (kg) → maps to "Total Mass" field
 const ESI_ATTR_WH_MAX_JUMP_MASS    = 1385; // Max mass of a single ship that can jump through (kg) → maps to "Wormhole Size" field
 
-// How long to keep the ESI wormhole type list in localStorage before re-fetching (7 days)
-const WH_TYPES_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+// How long to keep the ESI wormhole type list in localStorage before re-fetching (1 day)
+const WH_TYPES_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 // Individual ship mass limits per wormhole size (stored internally in kg)
 const WH_SIZES = [
@@ -1166,6 +1166,7 @@ createApp({
       shipModalValid, unitStep,
       whTotalMassInput, draftColdInput, draftHotInput, customMassInput,
       whTypeData, whTypeId, whTypeIsCustom, whTypeFetching, whTypesFetching, whDisplayName, onWhTypeChange,
+      refreshWhTypes: () => _fetchWhTypeList(),
       applyTheme, fmtMass, massFits,
       addPass, removePass, clearPasses, resetSession, recordPlanPass, advanceWhState, nextWhState,
       addFarSideShip, removeFarSideShip,
